@@ -3,6 +3,8 @@
 
 @import "{{ site.theme }}";
 @import "sharingbuttons.io.css";
+
+// override of page-header for the pages-themes-cayman theme
 .page-header-override {
   color: $header-heading-color;
   text-align: center;
@@ -20,4 +22,18 @@
   @include small {
     padding: 2rem 1rem;
   }
+}
+
+// home icon (XXX)
+.fixed-bl {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+}
+
+// top icon (fa-arrow-circle-o-up)
+.fixed-br {
+  position: fixed;
+  bottom: 0;
+  right: 0;
 }
