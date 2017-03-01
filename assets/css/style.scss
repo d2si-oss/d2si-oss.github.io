@@ -2,6 +2,7 @@
 ---
 
 @import "{{ site.theme }}";
+@import "sharingbuttons.io.css";
 .page-header-override {
   color: $header-heading-color;
   text-align: center;
