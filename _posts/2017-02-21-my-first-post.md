@@ -1,6 +1,7 @@
 ---
 title: Hello World!
-layout: default
+author: <a href="mailto:antoine.jacoutot@d2-si.eu">Antoine Jacoutot</a>
+layout: post
 ---
 
 Lorem ipsum dolor sit amet, pede ipsum sed molestie, tincidunt neque sit. Diam

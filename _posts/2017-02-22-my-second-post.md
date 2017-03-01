@@ -1,6 +1,7 @@
 ---
 title: I shall conquer thee!
-layout: default
+author: <a href="mailto:antoine.jacoutot@d2-si.eu">Antoine Jacoutot</a>
+layout: post
 ---
 
 Donec non orci ligula. Donec tristique purus ac odio pulvinar, non tincidunt
