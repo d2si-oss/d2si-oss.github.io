@@ -54,11 +54,12 @@ minimal Consul service with the following command:
 ```
 -server -dev -ui -client 0.0.0.0
 ```
+
 We use the following flags:
 - server: start the consul agent in server mode
 - dev: create a standalone Consul server without any persistency
 - ui: start a small web interface allowing us to easily look at the keys stored
-by Docker and their values
+  by Docker and their values
 - client 0.0.0.0: bind all network interfaces for client access (default is
   127.0.0.1 only)
 
@@ -68,6 +69,7 @@ the daemons with the cluster-store option:
 ```
 dockerd -H fd:// --cluster-store=consul://consul:8500 --cluster-advertise=eth0:2376
 ```
+
 The cluster-advertise option specifies which IP to advertise in the cluster for
 a docker host (this option is not optional). This command assumes that consul
 resolves to 10.0.0.5 in our case.
@@ -91,16 +93,19 @@ outputs).
 
 ### Creating an Overlay
 We can now create an Overlay network between our two Docker nodes:
+
 ```
 docker0:~$ docker network create --driver overlay --subnet 192.168.0.0/24 demonet
 620dd594834293e912bc17931d589c41bac318734d1084632f02da3177708bdc
 ```
-We are using the overlay driver, and are choosing 192.168.0.0/24 as a subnet
-for the overlay (this parameter is optional but we want to have addresses very
+
+We are using the overlay driver, and are choosing 192.168.0.0/24 as a subnet for
+the overlay (this parameter is optional but we want to have addresses very
 different from the ones on the hosts to simplify the analysis).
 
 Let's check that we configured our overlay correctly by listing networks on both
 hosts.
+
 ```
 NETWORK ID          NAME                DRIVER              SCOPE
 eb096cb816c0        bridge              bridge              local
@@ -117,6 +122,7 @@ eb7a05eba815        bridge              bridge              local
 4346f6c422b2        host                host                local
 5e8ac997ecfa        none                null                local
 ```
+
 This looks good: both Docker nodes know the demonet network and it has the same
 id (*620dd5948342*) on both hosts.
 
@@ -126,7 +132,7 @@ our overlay and explicitly give it an IP address (192.168.0.100) and make it
 sleep. On docker1 we create a container attached to the overlay network and
 running a ping command targeting C0.
 
-```bash
+```
 docker0:~$ docker run -d --ip 192.168.0.100 --net demonet --name C0 debian sleep 3600
 
 docker1:~$ docker run -it --rm --net demonet debian bash
@@ -135,15 +141,18 @@ PING 192.168.0.100 (192.168.0.100): 56 data bytes
 64 bytes from 192.168.0.100: icmp_seq=0 ttl=64 time=0.618 ms
 64 bytes from 192.168.0.100: icmp_seq=1 ttl=64 time=0.483 ms
 ```
+
 We can see that the connectivity between both containers is OK. If we try to
 ping C0 from docker1, it does not work because docker1 does no know anything
 about 192.168.0.0/24 which is isolated in the overlay.
+
 ```
 docker1:~$ ping 192.168.0.100
 PING 192.168.0.100 (192.168.0.100) 56(84) bytes of data.
 ^C--- 192.168.0.100 ping statistics ---
 4 packets transmitted, 0 received, 100% packet loss, time 3024ms
 ```
+
 Here is what we have built so far:
 
 <img src="/assets/2017-04-25-deep-dive-into-docker-overlay-networks-part-1/first-overlay.png" alt="First overlay" width="600">
@@ -152,7 +161,9 @@ Here is what we have built so far:
 Now that we have built an overlay let's try and see what makes it work.
 
 ### Network configuration of the containers
-What is the network configuration of C0 on docker0? We can exec into the container to find out:
+What is the network configuration of C0 on docker0? We can exec into the
+container to find out:
+
 ```
 docker0:~$ docker exec C0 ip addr show
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default
@@ -168,29 +179,35 @@ docker0:~$ docker exec C0 ip addr show
     inet 172.18.0.2/16 scope global eth1
        valid_lft forever preferred_lft forever
 ```
+
 We have two interfaces (and the loopback) in the container:
 - eth0: configured with an IP in the 192.168.0.0/24 range. This interface is the
-one in our overlay.
+  one in our overlay.
 - eth1: configured with an IP in 172.18.0.2/16 range, which we did not
-configure anywhere
+  configure anywhere
 
 What about the routing configuration?
+
 ```
 docker0:~$ docker exec C0 ip route show
 default via 172.18.0.1 dev eth1
 172.18.0.0/16 dev eth1  proto kernel  scope link  src 172.18.0.2
 192.168.0.0/24 dev eth0  proto kernel  scope link  src 192.168.0.100
 ```
-The routing configuration indicates that the default route is via eth1,
-which means that this interface can be used to access resources outside
-of the overlay. We can verify this easily by pinging an external IP address.
+
+The routing configuration indicates that the default route is via eth1, which
+means that this interface can be used to access resources outside of the
+overlay. We can verify this easily by pinging an external IP address.
+
 ```
 docker exec -it C0 ping 8.8.8.8
 PING 8.8.8.8 (8.8.8.8): 56 data bytes
 64 bytes from 8.8.8.8: icmp_seq=0 ttl=51 time=0.957 ms
 64 bytes from 8.8.8.8: icmp_seq=1 ttl=51 time=0.975 ms
 ```
+
 Let's see if we can get more information on these interfaces:
+
 ```
 docker0:~$ docker exec C0 ip -details link show eth0
 6: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UP mode DEFAULT group default
@@ -202,6 +219,7 @@ docker0:~$ docker exec C0 ip -details link show eth1
     link/ether 02:42:ac:12:00:02 brd ff:ff:ff:ff:ff:ff promiscuity 0
     veth
 ```
+
 The type of both interfaces is *veth*. veth interfaces always always come in
 pair connected with a virtual wire. The two peered veth can be in different
 network namespaces which allows traffic to move from on namespace to an other.
@@ -218,12 +236,12 @@ We can identify the other end of a veth using the ethtool command. However this
 command is not available in our container. We can execute this command inside
 our container using "nsenter" which allows us to enter one or several namespaces
 associated with a process or using "ip netns exec" which relies on iproute to
-execute a command in a given network namespace. In our examples, we will use
-ip netns.
+execute a command in a given network namespace. In our examples, we will use ip
+netns.
 
 The first thing we need to do is to identify the network namespace of the
-container. We can achieve this by inspecting the container, and extracting
-what we need from the SandboxKey:
+container. We can achieve this by inspecting the container, and extracting what
+we need from the SandboxKey:
 
 {% raw %}
     docker0:~$ docker inspect C0 -f {{.NetworkSettings.SandboxKey}}
@@ -238,18 +256,23 @@ what we need from the SandboxKey:
 Docker does create symlinks in the /var/run/netns directoryn which is where ip
 netns is looking for network namespaces. To solve this, we simply need to add a
 symlink (if you use the terraform setup this symlink is already present).
+
 ```
 sudo ln -s /var/run/docker/netns /var/run/netns
 ```
+
 We can now run ip netns commands. For instance if we want to list network
 namespaces:
+
 ```
 docker0:~$ sudo ip netns ls
 e4b8ecb7ae7c
 1-620dd59483
 ```
+
 We can also execute host commands inside the network namespace of a container
 (even if this container does not have the command):
+
 ```
 docker0:~$ sudo ip netns exec $C0netns ip addr show eth0
 6: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UP group default
@@ -257,8 +280,10 @@ docker0:~$ sudo ip netns exec $C0netns ip addr show eth0
     inet 192.168.0.100/24 scope global eth0
        valid_lft forever preferred_lft forever
 ```
-Let's see what are the interface indexes associated with the peers of eth0
-and eth1:
+
+Let's see what are the interface indexes associated with the peers of eth0 and
+eth1:
+
 ```
 docker0:~$ sudo ip netns exec $C0netns ethtool -S eth0
 NIC statistics:
@@ -267,6 +292,7 @@ docker0:~$ sudo ip netns exec $C0netns ethtool -S eth1
 NIC statistics:
     peer_ifindex: 10
 ```
+
 Using nsenter, we could execute the same commands:
 
 {% raw %}
@@ -280,6 +306,7 @@ Using nsenter, we could execute the same commands:
 
 We are now looking for interfaces with indexes 7 and 10. We can first look on
 the host itself:
+
 ```
 docker0:~$ ip -details link show
 1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default
@@ -297,11 +324,12 @@ docker0:~$ ip -details link show
     veth
     bridge_slave
 ```
-We can see from this output that we have no trace of interface
-7 but we have found interface 10, the other of eth1. In addition, this interface
-is plugged on a bridge called "docker_gwbridge".
-What is this bridge? If we list the networks managed by docker,
-we can see that it has appeared in the list:
+
+We can see from this output that we have no trace of interface 7 but we have
+found interface 10, the other of eth1. In addition, this interface is plugged on
+a bridge called "docker_gwbridge". What is this bridge? If we list the networks
+managed by docker, we can see that it has appeared in the list:
+
 ```
 docker0:~$ docker network ls
 NETWORK ID          NAME                DRIVER              SCOPE
@@ -311,7 +339,9 @@ f6823b311fd2        docker_gwbridge     bridge              local
 d538d58b17e7        host                host                local
 f2ee470bb968        none                null                local
 ```
+
 We can now inspect it:
+
 ```
 docker0:~$ docker inspect docker_gwbridge
 "Name": "docker_gwbridge",
@@ -332,12 +362,13 @@ docker0:~$ docker inspect docker_gwbridge
     "com.docker.network.bridge.name": "docker_gwbridge"
  }
 ```
+
 I removed part of the output to focus on the essential pieces of information:
 - this network uses the driver bridge (the same one used by the standard docker
   bridge, docker0)
 - it uses subnet 172.18.0.0/16, which is consistent with eth1
 - enable_icc is set to false which means we cannot use this bridge for
-inter-container communication
+  inter-container communication
 - enable_ip_masquerade is set to true, which means the traffic from the
   container will be NATed to access the external network (which we saw earlier when we
   successfully pinged 8.8.8.8)
@@ -345,6 +376,7 @@ inter-container communication
 We can verify that inter-container communication is disabled by trying to ping
 C0 on its eth1 address (172.18.0.2) from another container on docker0 also
 attached to demonet:
+
 ```
 docker0:~$ docker run --rm -it --net demonet debian ping 172.18.0.2
 PING 172.18.0.2 (172.18.0.2): 56 data bytes
@@ -357,14 +389,16 @@ Here is an updated view of what we have found:
 <img src="/assets/2017-04-25-deep-dive-into-docker-overlay-networks-part-1/external-connectivity.png" alt="External Connectivity" width="600">
 
 ### What about eth0, the interface connected to the overlay?
-The interface peered with eth0 is not in the host network namespace.
-It must be in another one. If we look again at the network namespaces:
+The interface peered with eth0 is not in the host network namespace. It must be
+in another one. If we look again at the network namespaces:
+
 ```
 docker0:~$ sudo ip netns ls
 e4b8ecb7ae7c
 1-620dd59483
 ```
-we can see a namespace called "1-c4305b67cd". Except for the "1-", the name of
+
+We can see a namespace called "1-c4305b67cd". Except for the "1-", the name of
 this namespace is the beginning of the network id of our overlay network:
 
 {% raw %}
@@ -374,6 +408,7 @@ this namespace is the beginning of the network id of our overlay network:
 
 This namespace is clearly related to our overlay network. We can look at the
 interfaces present in that namespace:
+
 ```
 overns=1-620dd59483
 sudo ip netns exec $overns ip -d link show
@@ -389,10 +424,11 @@ sudo ip netns exec $overns ip -d link show
     veth
     bridge_slave
 ```
+
 The overlay network namespace contains three interfaces (and lo):
 - br0: a bridge
 - veth2: a veth interface which is the peer interface of eth0 in our container
-and which is connected to the bridge
+  and which is connected to the bridge
 - vxlan1: an interface of type "vxlan" which is also connected to the bridge
 
 The vxlan interface is clearly where the "overlay magic" is happening and we are
