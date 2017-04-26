@@ -26,12 +26,12 @@ All the code used in this post is available on
 [github](https://github.com/lbernail/dockercon2017).
 
 ## Docker Overlay Networks
-First, we are going to build an Overlay network between Docker hosts. In our
+First, we are going to build an overlay network between Docker hosts. In our
 example, we will do this with three hosts: two running Docker and one running
-Consul. Docker will use Consul to store the metadata on the Overlay networks
-that need to be shared by all the Docker engines part of the Overlay.
+Consul. Docker will use Consul to store the metadata on the overlay networks
+that need to be shared by all the Docker engines part of the overlay.
 Before Docker 1.12, Docker required an external Key-Value store (Etcd or Consul)
-to create Overlay networks and to create a Docker Swarm (now often referred to
+to create overlay networks and to create a Docker Swarm (now often referred to
 as "classic Swarm"). Starting with Docker 1.12, Docker can now rely on an
 internal Key-Value store to create Swarms and overlay networks ("Swarm mode" or
 "new swarm"). We chose to use Consul because it allows us to look into the keys
@@ -94,7 +94,7 @@ docker servers, you should use the public IP addresses (given in terraform
 outputs).
 
 ### Creating an Overlay
-We can now create an Overlay network between our two Docker nodes:
+We can now create an overlay network between our two Docker nodes:
 
 ```
 docker0:~$ docker network create --driver overlay --subnet 192.168.0.0/24 demonet
