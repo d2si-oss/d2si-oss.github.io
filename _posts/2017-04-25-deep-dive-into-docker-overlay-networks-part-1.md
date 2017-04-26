@@ -44,7 +44,9 @@ In our example, the servers will have the following IP addresses:
 - docker0: 10.0.0.10
 - docker1: 10.0.0.0.11
 
-<img src="/assets/2017-04-25-deep-dive-into-docker-overlay-networks-part-1/servers-setup.png" alt="Servers setup">
+<div align="center">
+<img src="/assets/2017-04-25-deep-dive-into-docker-overlay-networks-part-1/servers-setup.png" alt="Servers setup" width="250">
+</div>
 
 ### Starting the Consul and Docker services
 The first thing we need to do is to start a Consul server. To do this, we simply
@@ -434,4 +436,4 @@ The overlay network namespace contains three interfaces (and lo):
 The vxlan interface is clearly where the "overlay magic" is happening and we are
 going to look at it in details but let's update our diagram first:
 
-<img src="/assets/2017-04-25-deep-dive-into-docker-overlay-networks-part-1/full-connectivity.png" alt="Full Connectivity" width="600">
+<img src="/assets/2017-04-25-deep-dive-into-docker-overlay-networks-part-1/full-connectivity.png" alt="Full Connectivity">
