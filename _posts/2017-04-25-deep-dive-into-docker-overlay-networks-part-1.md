@@ -6,7 +6,7 @@ title: "Deep dive into Docker Overlay Networks: Part 1"
 
 ## Introduction
 At [D2SI](http://d2-si.eu) we have been helping projects go into production with
-Docker for more than a year. We believe that going into production requires at
+Docker for more than a year. We believe that going into production requires a
 strong understanding of the technology to be able to debug complex issues,
 analyze unexpected behaviors or troubleshoot performance degradations. That is
 why we have tried to understand as best as we can the technical components used
@@ -145,7 +145,7 @@ PING 192.168.0.100 (192.168.0.100): 56 data bytes
 ```
 
 We can see that the connectivity between both containers is OK. If we try to
-ping C0 from docker1, it does not work because docker1 does no know anything
+ping C0 from docker1, it does not work because docker1 does not know anything
 about 192.168.0.0/24 which is isolated in the overlay.
 
 ```
@@ -224,7 +224,7 @@ docker0:~$ docker exec C0 ip -details link show eth1
 
 The type of both interfaces is *veth*. veth interfaces always always come in
 pair connected with a virtual wire. The two peered veth can be in different
-network namespaces which allows traffic to move from on namespace to an other.
+network namespaces which allows traffic to move from one namespace to another.
 These two veth are used to get outside of the container network namespace.
 
 Here is what we have found out so far:
@@ -255,7 +255,7 @@ we need from the SandboxKey:
     e4b8ecb7ae7c
 {% endraw %}
 
-Docker does create symlinks in the /var/run/netns directoryn which is where ip
+Docker does create symlinks in the /var/run/netns directory which is where ip
 netns is looking for network namespaces. To solve this, we simply need to add a
 symlink (if you use the terraform setup this symlink is already present).
 
