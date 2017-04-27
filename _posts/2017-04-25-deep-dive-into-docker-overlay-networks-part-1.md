@@ -5,8 +5,9 @@ title: "Deep dive into Docker Overlay Networks: Part 1"
 ---
 
 ## Introduction
-At [D2SI](http://d2-si.eu) we have been helping projects go into production with
-Docker for more than a year. We believe that going into production requires a
+At [D2SI](http://d2-si.eu), we have been using Docker since
+its very beginning and have been helping many projects go into production.
+We believe that going into production requires a
 strong understanding of the technology to be able to debug complex issues,
 analyze unexpected behaviors or troubleshoot performance degradations. That is
 why we have tried to understand as best as we can the technical components used
@@ -14,7 +15,7 @@ by Docker.
 
 This blog post is focused on the Docker network overlays. The Docker network
 overlay driver relies on several technologies: network namespaces, VXLAN,
-Netlink and a distributed key-value store. This blog post will present each of
+Netlink and a distributed key-value store. This article will present each of
 these mechanisms one by one along with their userland tools and show hands-on
 how they interact together when setting up an overlay to connect containers.
 
@@ -28,10 +29,10 @@ All the code used in this post is available on
 ## Docker Overlay Networks
 First, we are going to build an overlay network between Docker hosts. In our
 example, we will do this with three hosts: two running Docker and one running
-Consul. Docker will use Consul to store the metadata on the overlay networks
-that need to be shared by all the Docker engines part of the overlay.
-Before Docker 1.12, Docker required an external Key-Value store (Etcd or Consul)
-to create overlay networks and to create a Docker Swarm (now often referred to
+Consul. Docker will use Consul to store the overlay networks metadata that needs
+to be shared by all the Docker engines: container IPs, MAC addresses and
+location.  Before Docker 1.12, Docker required an external Key-Value store (Etcd
+or Consul) to create overlay networks and Docker Swarms (now often referred to
 as "classic Swarm"). Starting with Docker 1.12, Docker can now rely on an
 internal Key-Value store to create Swarms and overlay networks ("Swarm mode" or
 "new swarm"). We chose to use Consul because it allows us to look into the keys
@@ -54,7 +55,7 @@ download Consul from [here](https://www.consul.io). We can then start a very
 minimal Consul service with the following command:
 
 ```
--server -dev -ui -client 0.0.0.0
+consul agent -server -dev -ui -client 0.0.0.0
 ```
 
 We use the following flags:
@@ -86,12 +87,12 @@ You can easily create the same environment in AWS using the terraform setup in
 the [github](https://github.com/lbernail/dockercon2017) repository. All the
 default configuration (in particular the region to use) is in variables.tf. You
 will need to give a value to the key_pair variable, either using the command
-line (tf apply -var key_pair=demo) or by modifying the variables.tf file. The
-three instances are configured with userdata: consul and docker are installed
-and started with the good options, an entry is added to /etc/hosts so consul
-resolves into the IP address of the consul server. When connecting to consul or
-docker servers, you should use the public IP addresses (given in terraform
-outputs).
+line (terraform apply -var key_pair=demo) or by modifying the variables.tf file.
+The three instances are configured with userdata: consul and docker are
+installed and started with the good options, an entry is added to /etc/hosts so
+consul resolves into the IP address of the consul server. When connecting to
+consul or docker servers, you should use the public IP addresses (given in
+terraform outputs).
 
 ### Creating an Overlay
 We can now create an overlay network between our two Docker nodes:
@@ -129,8 +130,8 @@ This looks good: both Docker nodes know the demonet network and it has the same
 id (*620dd5948342*) on both hosts.
 
 Let's now check that our overlay works by creating a container on docker0 and
-trying to ping it from docker1. On docker0, we create a C0 container, attach it to
-our overlay and explicitly give it an IP address (192.168.0.100) and make it
+trying to ping it from docker1. On docker0, we create a C0 container, attach it
+to our overlay, explicitly give it an IP address (192.168.0.100) and make it
 sleep. On docker1 we create a container attached to the overlay network and
 running a ping command targeting C0.
 
@@ -207,6 +208,8 @@ PING 8.8.8.8 (8.8.8.8): 56 data bytes
 64 bytes from 8.8.8.8: icmp_seq=0 ttl=51 time=0.957 ms
 64 bytes from 8.8.8.8: icmp_seq=1 ttl=51 time=0.975 ms
 ```
+Note that it is possible to create an overlay where containers do not have access to
+external networks using the ```--internal``` flag.
 
 Let's see if we can get more information on these interfaces:
 
@@ -255,9 +258,9 @@ we need from the SandboxKey:
     e4b8ecb7ae7c
 {% endraw %}
 
-Docker does create symlinks in the /var/run/netns directory which is where ip
-netns is looking for network namespaces. To solve this, we simply need to add a
-symlink (if you use the terraform setup this symlink is already present).
+Docker does not create symlinks in the /var/run/netns directory which is where
+ip netns is looking for network namespaces. To solve this, we simply need to add
+a symlink (if you use the terraform setup this symlink is already present).
 
 ```
 sudo ln -s /var/run/docker/netns /var/run/netns
@@ -328,7 +331,7 @@ docker0:~$ ip -details link show
 ```
 
 We can see from this output that we have no trace of interface 7 but we have
-found interface 10, the other of eth1. In addition, this interface is plugged on
+found interface 10, the peer of eth1. In addition, this interface is plugged on
 a bridge called "docker_gwbridge". What is this bridge? If we list the networks
 managed by docker, we can see that it has appeared in the list:
 
@@ -372,8 +375,8 @@ I removed part of the output to focus on the essential pieces of information:
 - enable_icc is set to false which means we cannot use this bridge for
   inter-container communication
 - enable_ip_masquerade is set to true, which means the traffic from the
-  container will be NATed to access the external network (which we saw earlier when we
-  successfully pinged 8.8.8.8)
+  container will be NATed to access external networks (which we saw earlier when
+  we successfully pinged 8.8.8.8)
 
 We can verify that inter-container communication is disabled by trying to ping
 C0 on its eth1 address (172.18.0.2) from another container on docker0 also
@@ -437,3 +440,7 @@ The vxlan interface is clearly where the "overlay magic" is happening and we are
 going to look at it in details but let's update our diagram first:
 
 <img src="/assets/2017-04-25-deep-dive-into-docker-overlay-networks-part-1/full-connectivity.png" alt="Full Connectivity">
+
+## Conclusion
+This concludes part 1 of this article. In part 2, we will focus on VXLAN: what
+is this protocol and how it is used by Docker.
