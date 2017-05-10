@@ -25,7 +25,7 @@ This post is derived from the presentation I gave at
 [here](https://www.slideshare.net/lbernail/deep-dive-in-docker-overlay-networks).
 
 All the code used in this post is available on
-[github](https://github.com/lbernail/dockercon2017).
+[GitHub](https://github.com/lbernail/dockercon2017).
 
 ## Docker Overlay Networks
 First, we are going to build an overlay network between Docker hosts. In our
@@ -85,7 +85,7 @@ still empty.
 <img src="/assets/2017-04-25-deep-dive-into-docker-overlay-networks-part-1/consul-start.png" alt="Consul content">
 
 You can easily create the same environment in AWS using the terraform setup in
-the [github](https://github.com/lbernail/dockercon2017) repository. All the
+the [GitHub](https://github.com/lbernail/dockercon2017) repository. All the
 default configuration (in particular the region to use) is in variables.tf. You
 will need to give a value to the key_pair variable, either using the command
 line (terraform apply -var key_pair=demo) or by modifying the variables.tf file.
