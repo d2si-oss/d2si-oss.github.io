@@ -311,6 +311,10 @@ ARP and FDB tables.
 
 <img src="/assets/2017-05-10-deep-dive-into-docker-overlay-networks-part-2/connectivity-complete.png" alt="Complete Connectivity">
 
+In Swarm mode, Docker does not rely on Serf to synchronize information between
+nodes but relies on its own implementation of the Gossip protocol. It
+achieves exactly the same thing.
+
 ## Alternate VXLAN resolution options
 The Docker daemon automatically populates ARP and FDB tables based on
 information received through the Gossip protocol via Serf, and relies on ARP
