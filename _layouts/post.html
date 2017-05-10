@@ -3,7 +3,7 @@ layout: default
 ---
 
 <div align="right">
-  By {{ page.author }}, {{ page.date | date_to_string }}
+    By {{ page.author }}{% if page.handle != null %} - <a href="https://twitter.com/{{ page.handle}}">@{{ page.handle}}</a>{% endif %}, {{ page.date | date_to_string }}
 </div>
 {% include home-icon-link.html %}
 {{ content }}
