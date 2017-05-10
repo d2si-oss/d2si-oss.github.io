@@ -1,8 +1,8 @@
 ---
 author: Laurent Bernaille
-handle: lbernail
 layout: post
 title: "Deep dive into Docker Overlay Networks: Part 1"
+twitter: lbernail
 ---
 
 ## Introduction

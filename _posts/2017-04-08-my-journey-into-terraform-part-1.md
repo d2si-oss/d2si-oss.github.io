@@ -1,8 +1,8 @@
 ---
 author: Gauthier Wallet
-handle: Ninnir
 layout: post
 title: "My Journey into Terraform: Part 1"
+twitter: Ninnir
 ---
 
 ## Introduction
