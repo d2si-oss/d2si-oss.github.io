@@ -444,5 +444,5 @@ going to look at it in details but let's update our diagram first:
 <img src="/assets/2017-04-25-deep-dive-into-docker-overlay-networks-part-1/full-connectivity.png" alt="Full Connectivity">
 
 ## Conclusion
-This concludes part 1 of this article. In part 2, we will focus on VXLAN: what
+This concludes part 1 of this article. In [part 2](http://techblog.d2-si.eu/2017/05/09/deep-dive-into-docker-overlay-networks-part-2.html), we will focus on VXLAN: what
 is this protocol and how it is used by Docker.
