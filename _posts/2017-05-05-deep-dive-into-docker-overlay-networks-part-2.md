@@ -22,7 +22,7 @@ From [wikipedia](https://en.wikipedia.org/wiki/Virtual_Extensible_LAN):
 VXLAN is a tunneling technology which encapsulates L2 frames inside UDP packets
 usually sent on port 4789. It was originally developed by  VMware, Arista and
 Cisco. The main goal of VXLAN was to simplify cloud deployments which require
-multi-tenancy at the L2 Layer. It provides:
+multi-tenancy at the L2 layer. It provides:
 - Tunneling L2 over L3 to avoid the necessity of L2 connectivity between all
 hosts in the cluster
 - More than 4096 isolated networks (VLAN IDs are limited to 4096)
@@ -59,8 +59,8 @@ listening on eth0, link-type EN10MB (Ethernet), capture size 262144 bytes
 17:46:13.884407 06:e2:c0:20:ec:9f > 06:4c:1f:a8:84:3b, 10.0.0.10.54415 > 10.0.0.11.4789: VXLAN, flags [I] (0x08), vni 256
 02:42:c0:a8:00:64 > 02:42:c0:a8:00:02, 192.168.0.100 > 192.168.0.2: ICMP echo reply, id 1, seq 0, length 64
 ```
-Each packet generates two lines of output in tcpdump because it can analyze
-VXLAN frames (a few fields have been removed for readability):
+Each packet generates two lines of output in tcpdump because due to VXLAN frames
+analysis (a few fields have been removed for readability):
 - the "outer" frame, with IP 10.0.0.11 and 10.0.0.10 (docker hosts)
 - the "inner" frame, with IP 192.168.0.100 and 192.168.0.2 (our containers)
 and an ICMP payload. We can also see the MAC addresses of our containers.
@@ -113,7 +113,7 @@ When we ping from the window with the container, here is what we see in tcpdump:
 19:16:40.658371  In 02:42:c0:a8:00:64 ethertype ARP (0x0806), length 44: Reply 192.168.0.100 is-at 02:42:c0:a8:00:64, length 28
 19:16:40.658377 Out 02:42:c0:a8:00:64 ethertype ARP (0x0806), length 44: Reply 192.168.0.100 is-at 02:42:c0:a8:00:64, length 28
 ```
-We can see the ARP query and the answer, which means the overlay namespace
+We can see the ARP query and answer, which means the overlay namespace
 has the information and that it acts as an ARP proxy.
 We can easily verify this:
 ```
@@ -121,7 +121,7 @@ docker1:~$ sudo ip netns exec $overns ip neigh show
 192.168.0.100 dev vxlan1 lladdr 02:42:c0:a8:00:64 PERMANENT
 ```
 The entry is flagged as PERMANENT which means it is static and was "manually"
-added and not the result of an ARP discovery. What will happen if we create a
+added and not the result of an ARP discovery. What happens if we create a
 second container on docker0?
 ```
 docker0:~$ docker run -d --ip 192.168.0.200 --net demonet --name C1 debian sleep 3600
@@ -130,8 +130,8 @@ docker1:~$ sudo ip netns exec $overns ip neigh show
 192.168.0.200 dev vxlan1 lladdr 02:42:c0:a8:00:c8 PERMANENT
 192.168.0.100 dev vxlan1 lladdr 02:42:c0:a8:00:64 PERMANENT
 ```
-The entry has been added automatically, even if no traffic has been sent
-to this new container. This means that Docker is automatically populating
+The entry has been added automatically, even if no traffic was sent
+to this new container yet. This means that Docker is automatically populating
 the ARP entries in the overlay namespace and that the vxlan interface is
 acting as a proxy to answer ARP queries.
 
@@ -210,14 +210,15 @@ is based64 encoded and Consul answers queries in JSON):
     }
 {% endraw %}
 
-We find all the metadata on our network:
+We can find all the metadata on our network:
 - name: demonet
 - id: 620dd594834293e912bc17931d589c41bac318734d1084632f02da3177708bdc
 - subnet range: 192.168.0.0/24
 
-We can also retrieve information on endpoints but the curl queries are hard to
-read so we will this small python script (available on the github repository)
-to retrieve this information:
+We can also retrieve information about endpoints but the curl queries are hard to
+read so we will use this small python script (available on the GitHub
+[repository](https://github.com/lbernail/dockercon2017)) to retrieve this
+information:
 
 ```python
 import consul
@@ -245,7 +246,7 @@ The script displays the main pieces of information on the container endpoints:
 - MAC address
 - Locator: the host where the container is located
 
-Here is what we find out in our setup:
+Here is what we find out about our setup:
 
 ```
 docker1:~$ python/dump_endpoints.py
@@ -275,8 +276,8 @@ docker0	10.0.0.10
 docker1	10.0.0.11
 #########################################
 ```
-I removed most of the output to focus on relevant information: we see all the
-nodes participating in Gossip.
+I removed most of the output to focus on relevant information: we can see all
+the nodes participating in Gossip.
 
 Serf is started with the following options:
 - bind: to bind a port different from 7946 (already used by Docker)
@@ -315,7 +316,7 @@ the ARP and FDB tables.
 The Docker daemon automatically populates ARP and FDB tables based on
 information received through the Gossip protocol via Serf, and relies
 on ARP proxying by the VLXAN interface.
-However, VXLAN also proposes other options for discovery.
+However, VXLAN also gives us other options for discovery.
 
 ### Point-to-point resolution
 When VXLAN is configured with the "remote <IP>" option, it sends all unknown
@@ -341,5 +342,5 @@ this very complete post: [VXLAN & Linux](https://vincent.bernat.im/en/blog/2017-
 
 ## Conclusion
 In the first two parts of this post, we have seen how the Docker overlay works
-and the technologies it relies on. In the third part, we will see how we can
-build our own overlay from scratch simply using Linux commands.
+and the technologies it relies on. In the third and final part, we will see how we can
+build our own overlay from scratch using only Linux commands.
