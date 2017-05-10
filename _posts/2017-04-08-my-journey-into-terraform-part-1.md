@@ -3,6 +3,7 @@ author: Gauthier Wallet
 layout: post
 title: "My Journey into Terraform: Part 1"
 twitter: Ninnir
+keywords: terraform,hashicorp,opensource,golang,aws sns
 ---
 
 ## Introduction

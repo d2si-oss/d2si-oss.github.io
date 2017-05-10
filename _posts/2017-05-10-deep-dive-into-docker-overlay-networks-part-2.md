@@ -3,6 +3,7 @@ author: Laurent Bernaille
 layout: post
 title: "Deep dive into Docker Overlay Networks: Part 2"
 twitter: lbernail
+keywords: docker overlay network,overlay network,vxlan,netlink,dockercon,linux networking
 ---
 
 ## Introduction
