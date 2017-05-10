@@ -1,5 +1,5 @@
 ---
-author: <a href="mailto:gauthier.wallet@d2-si.eu">Gauthier Wallet</a>
+author: Gauthier Wallet - <a href="https://twitter.com/Ninnir">@Ninnir</a>
 layout: post
 title: "My Journey into Terraform: Part 1"
 ---
