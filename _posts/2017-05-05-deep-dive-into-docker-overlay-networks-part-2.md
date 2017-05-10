@@ -28,8 +28,8 @@ hosts in the cluster
 - More than 4096 isolated networks (VLAN IDs are limited to 4096)
 
 On Linux, Openvswitch supports VXLAN and the kernel has native support for it
-since version 3.7. In addition, VXLAN works with network namespaces since
-kernel 3.16.
+since version 3.7. In addition, VXLAN works with network namespaces since kernel
+3.16.
 
 Here is what a VXLAN packet looks like:
 
@@ -90,9 +90,8 @@ packet:
 ping 192.168.0.100
 ```
 There is nothing in tcpdump on docker0 so the ARP traffic is not sent in the
-VXLAN tunnel. Let's recreate a container on docker1 and tcpdump in the
-overlay namespace of docker1
-to verify that we are getting ARP queries.
+VXLAN tunnel. Let's recreate a container on docker1 and tcpdump in the overlay
+namespace of docker1 to verify that we are getting ARP queries.
 ```
 docker1:~$ docker run -it --rm --net demonet debian bash
 ```
@@ -113,16 +112,15 @@ When we ping from the window with the container, here is what we see in tcpdump:
 19:16:40.658371  In 02:42:c0:a8:00:64 ethertype ARP (0x0806), length 44: Reply 192.168.0.100 is-at 02:42:c0:a8:00:64, length 28
 19:16:40.658377 Out 02:42:c0:a8:00:64 ethertype ARP (0x0806), length 44: Reply 192.168.0.100 is-at 02:42:c0:a8:00:64, length 28
 ```
-We can see the ARP query and answer, which means the overlay namespace
-has the information and that it acts as an ARP proxy.
-We can easily verify this:
+We can see the ARP query and answer, which means the overlay namespace has the
+information and that it acts as an ARP proxy. We can easily verify this:
 ```
 docker1:~$ sudo ip netns exec $overns ip neigh show
 192.168.0.100 dev vxlan1 lladdr 02:42:c0:a8:00:64 PERMANENT
 ```
 The entry is flagged as PERMANENT which means it is static and was "manually"
-added and not the result of an ARP discovery. What happens if we create a
-second container on docker0?
+added and not the result of an ARP discovery. What happens if we create a second
+container on docker0?
 ```
 docker0:~$ docker run -d --ip 192.168.0.200 --net demonet --name C1 debian sleep 3600
 
@@ -130,10 +128,10 @@ docker1:~$ sudo ip netns exec $overns ip neigh show
 192.168.0.200 dev vxlan1 lladdr 02:42:c0:a8:00:c8 PERMANENT
 192.168.0.100 dev vxlan1 lladdr 02:42:c0:a8:00:64 PERMANENT
 ```
-The entry has been added automatically, even if no traffic was sent
-to this new container yet. This means that Docker is automatically populating
-the ARP entries in the overlay namespace and that the vxlan interface is
-acting as a proxy to answer ARP queries.
+The entry has been added automatically, even if no traffic was sent to this new
+container yet. This means that Docker is automatically populating the ARP
+entries in the overlay namespace and that the vxlan interface is acting as a
+proxy to answer ARP queries.
 
 If we look at the configuration of the vxlan interface, we can see that it has
 the proxy flag set which explains this behavior (we will look at the other
@@ -158,7 +156,7 @@ sudo ip netns exec $overns bridge fdb show
 33:33:00:00:00:01 dev veth2 self permanent
 01:00:5e:00:00:01 dev veth2 self permanent
 ```
-We see that the MAC addresses for our two containers on docker0 are in the
+We can see that the MAC addresses for our two containers on docker0 are in the
 database with a permanent flag. This information is also dynamically populated
 by Docker.
 
@@ -169,7 +167,7 @@ by Docker.
 We have just discovered that Docker populates MAC and FDB information
 automatically. How is this done?
 
-We can first look at the content of Consul. What is stored there?
+We can first look at the content of Consul. What is stored in there?
 
 <img src="/assets/2017-05-05-deep-dive-into-docker-overlay-networks-part-2/consul-with-network.png" alt="Consul content with network">
 
@@ -178,8 +176,8 @@ recognize the id of our overlay:
 620dd594834293e912bc17931d589c41bac318734d1084632f02da3177708bdc.
 
 The Consul UI does not display keys when they are too long but we can use curl
-to look at the content (Docker stores the information as JSON which
-is based64 encoded and Consul answers queries in JSON):
+to look at the content (Docker stores the information as JSON which is based64
+encoded and Consul answers queries in JSON):
 
 {% raw %}
     net=$(docker network inspect demonet -f {{.Id}})
@@ -215,8 +213,8 @@ We can find all the metadata on our network:
 - id: 620dd594834293e912bc17931d589c41bac318734d1084632f02da3177708bdc
 - subnet range: 192.168.0.0/24
 
-We can also retrieve information about endpoints but the curl queries are hard to
-read so we will use this small python script (available on the GitHub
+We can also retrieve information about endpoints but the curl queries are hard
+to read so we will use this small python script (available on the GitHub
 [repository](https://github.com/lbernail/dockercon2017)) to retrieve this
 information:
 
@@ -263,9 +261,9 @@ Locator: 10.0.0.10
 
 Consul is used as a reference store for all static information. However, it is
 not enough to dynamically notify all hosts when a container is created. It turns
-out that Docker uses Serf and its Gossip protocol to achieve this. We can
-easily verify this by subscribing to serf events on docker0 and create a
-container on docker1:
+out that Docker uses Serf and its Gossip protocol to achieve this. We can easily
+verify this by subscribing to serf events on docker0 and create a container on
+docker1:
 
 ```
 docker0:~$ serf agent -bind 0.0.0.0:17946 -join 10.0.0.11:7946 -node demo -log-level=debug -event-handler=./serf.sh
@@ -307,21 +305,21 @@ Then after 10s when the container exits on docker1:
 New event: user
 leave 192.168.0.2 255.255.255.0 02:42:c0:a8:00:02
 ```
-The Docker daemon subscribes to these events to create and remove entries in
-the ARP and FDB tables.
+The Docker daemon subscribes to these events to create and remove entries in the
+ARP and FDB tables.
 
 <img src="/assets/2017-05-05-deep-dive-into-docker-overlay-networks-part-2/connectivity-complete.png" alt="Complete Connectivity">
 
 ## Alternate VXLAN resolution options
 The Docker daemon automatically populates ARP and FDB tables based on
-information received through the Gossip protocol via Serf, and relies
-on ARP proxying by the VLXAN interface.
-However, VXLAN also gives us other options for discovery.
+information received through the Gossip protocol via Serf, and relies on ARP
+proxying by the VLXAN interface. However, VXLAN also gives us other options for
+discovery.
 
 ### Point-to-point resolution
 When VXLAN is configured with the "remote <IP>" option, it sends all unknown
-traffic to this IP. This setup is very simple but limited to tunnels between
-two hosts.
+traffic to this IP. This setup is very simple but limited to tunnels between two
+hosts.
 
 <div align="center">
 <img src="/assets/2017-05-05-deep-dive-into-docker-overlay-networks-part-2/vxlan-point-to-point.png" alt="VXLAN Point to Point" width="600">
@@ -330,17 +328,18 @@ two hosts.
 ### Multicast resolution
 When VXLAN is configured with the "group <IP>" option, it sends all unknown
 traffic to this multicast group. This setup is very efficient but requires
-multicast connectivity between all hosts, which is not always possible
-in particular when using public cloud.
+multicast connectivity between all hosts, which is not always possible in
+particular when using public cloud.
 
 <div align="center">
 <img src="/assets/2017-05-05-deep-dive-into-docker-overlay-networks-part-2/vxlan-multicast.png" alt="VXLAN Multicast" width="600">
 </div>
 
-For more detailed information on VXLAN configuration on Linux, I recommand 
-this very complete post: [VXLAN & Linux](https://vincent.bernat.im/en/blog/2017-vxlan-linux).
+For more detailed information on VXLAN configuration on Linux, I recommand this
+very complete post:
+[VXLAN & Linux](https://vincent.bernat.im/en/blog/2017-vxlan-linux).
 
 ## Conclusion
 In the first two parts of this post, we have seen how the Docker overlay works
-and the technologies it relies on. In the third and final part, we will see how we can
-build our own overlay from scratch using only Linux commands.
+and the technologies it relies on. In the third and final part, we will see how
+we can build our own overlay from scratch using only Linux commands.
