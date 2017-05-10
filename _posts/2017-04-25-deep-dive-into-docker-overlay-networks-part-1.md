@@ -1,5 +1,5 @@
 ---
-author: <a href="mailto:laurent.bernaille@d2-si.eu">Laurent Bernaille</a>
+author: Laurent Bernaille - <a href="https://twitter.com/lbernail">@lbernail</a>
 layout: post
 title: "Deep dive into Docker Overlay Networks: Part 1"
 ---
