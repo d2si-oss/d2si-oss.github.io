@@ -34,7 +34,7 @@ since version 3.7. In addition, VXLAN works with network namespaces since kernel
 
 Here is what a VXLAN packet looks like:
 
-<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/vxlan.png" alt="VXLAN" width="400">
+<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/vxlan.png" alt="VXLAN" width="400" style="margin: 0px auto;display:block;" />
 
 The "outer" IP packet is used for communication between hosts and the original
 L2 frame is encapuslated in a UDP packet with an additional VXLAN header for
@@ -66,7 +66,7 @@ analysis (a few fields have been removed for readability):
 - the "inner" frame, with IP 192.168.0.100 and 192.168.0.2 (our containers)
 and an ICMP payload. We can also see the MAC addresses of our containers.
 
-<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/connectivity-vxlanpacket.png" alt="Connectivity with VXLAN packet">
+<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/connectivity-vxlanpacket.png" alt="Connectivity with VXLAN packet" style="margin: 0px auto;display:block;" />
 
 ## Resolving container names and location
 We have seen that we can ping containers on docker0 from containers on docker1
@@ -161,7 +161,7 @@ We can see that the MAC addresses for our two containers on docker0 are in the
 database with a permanent flag. This information is also dynamically populated
 by Docker.
 
-<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/connectivity-with-arp-fdb.png" alt="Connectivity with ARP and FDB">
+<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/connectivity-with-arp-fdb.png" alt="Connectivity with ARP and FDB" style="margin: 0px auto;display:block;" />
 
 
 ## Distribution of MAC/FDB information
@@ -170,7 +170,7 @@ automatically. How is this done?
 
 We can first look at the content of Consul. What is stored in there?
 
-<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/consul-with-network.png" alt="Consul content with network">
+<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/consul-with-network.png" alt="Consul content with network" style="margin: 0px auto;display:block;" />
 
 The network that was empty when we started now contains information and we can
 recognize the id of our overlay:
@@ -309,7 +309,7 @@ leave 192.168.0.2 255.255.255.0 02:42:c0:a8:00:02
 The Docker daemon subscribes to these events to create and remove entries in the
 ARP and FDB tables.
 
-<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/connectivity-complete.png" alt="Complete Connectivity">
+<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/connectivity-complete.png" alt="Complete Connectivity" style="margin: 0px auto;display:block;" />
 
 In Swarm mode, Docker does not rely on Serf to synchronize information between
 nodes but relies on its own implementation of the Gossip protocol. It
@@ -327,7 +327,7 @@ traffic to this IP. This setup is very simple but limited to tunnels between two
 hosts.
 
 <div align="center">
-<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/vxlan-point-to-point.png" alt="VXLAN Point to Point" width="600">
+<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/vxlan-point-to-point.png" alt="VXLAN Point to Point" width="600" style="margin: 0px auto;display:block;" />
 </div>
 
 ### Multicast resolution
@@ -337,7 +337,7 @@ multicast connectivity between all hosts, which is not always possible in
 particular when using public cloud.
 
 <div align="center">
-<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/vxlan-multicast.png" alt="VXLAN Multicast" width="600">
+<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/vxlan-multicast.png" alt="VXLAN Multicast" width="600" style="margin: 0px auto;display:block;" />
 </div>
 
 For more detailed information on VXLAN configuration on Linux, I recommand this
