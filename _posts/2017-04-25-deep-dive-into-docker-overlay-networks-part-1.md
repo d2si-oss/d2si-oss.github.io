@@ -81,7 +81,7 @@ If we look at the at the Consul UI, we can see that Docker created some keys,
 but the network key: http://consul:8500/v1/kv/docker/network/v1.0/network/ is
 still empty.
 
-<img src="/assets/2017-04-25-deep-dive-into-docker-overlay-networks-part-1/consul-start.png" alt="Consul content" style="margin: 0px auto;display:block;" />
+<img src="/assets/2017-04-25-deep-dive-into-docker-overlay-networks-part-1/consul-start.png" width="600" alt="Consul content" style="margin: 0px auto;display:block;" />
 
 You can easily create the same environment in AWS using the terraform setup in
 the [GitHub](https://github.com/lbernail/dockercon2017) repository. All the
@@ -158,7 +158,7 @@ PING 192.168.0.100 (192.168.0.100) 56(84) bytes of data.
 
 Here is what we have built so far:
 
-<img src="/assets/2017-04-25-deep-dive-into-docker-overlay-networks-part-1/first-overlay.png" alt="First overlay" style="margin: 0px auto;display:block;" />
+<img src="/assets/2017-04-25-deep-dive-into-docker-overlay-networks-part-1/first-overlay.png" alt="First overlay" width="600" style="margin: 0px auto;display:block;" />
 
 ## Under the hood
 Now that we have built an overlay let's try and see what makes it work.
@@ -232,7 +232,7 @@ These two veth are used to get outside of the container network namespace.
 
 Here is what we have found out so far:
 
-<img src="/assets/2017-04-25-deep-dive-into-docker-overlay-networks-part-1/container-interfaces.png" alt="Container interfaces" style="margin: 0px auto;display:block;" />
+<img src="/assets/2017-04-25-deep-dive-into-docker-overlay-networks-part-1/container-interfaces.png" alt="Container interfaces" width="600" style="margin: 0px auto;display:block;" />
 
 We now need to identify the interfaces peered with each veth.
 
@@ -391,7 +391,7 @@ PING 172.18.0.2 (172.18.0.2): 56 data bytes
 
 Here is an updated view of what we have found:
 
-<img src="/assets/2017-04-25-deep-dive-into-docker-overlay-networks-part-1/external-connectivity.png" alt="External Connectivity" style="margin: 0px auto;display:block;" />
+<img src="/assets/2017-04-25-deep-dive-into-docker-overlay-networks-part-1/external-connectivity.png" alt="External Connectivity" width="600" style="margin: 0px auto;display:block;" />
 
 ### What about eth0, the interface connected to the overlay?
 The interface peered with eth0 is not in the host network namespace. It must be
@@ -439,7 +439,7 @@ The overlay network namespace contains three interfaces (and lo):
 The vxlan interface is clearly where the "overlay magic" is happening and we are
 going to look at it in details but let's update our diagram first:
 
-<img src="/assets/2017-04-25-deep-dive-into-docker-overlay-networks-part-1/full-connectivity.png" alt="Full Connectivity" style="margin: 0px auto;display:block;" />
+<img src="/assets/2017-04-25-deep-dive-into-docker-overlay-networks-part-1/full-connectivity.png" alt="Full Connectivity" width="600" style="margin: 0px auto;display:block;" />
 
 ## Conclusion
 This concludes part 1 of this article. In [part 2](http://techblog.d2-si.eu/2017/05/09/deep-dive-into-docker-overlay-networks-part-2.html), we will focus on VXLAN: what

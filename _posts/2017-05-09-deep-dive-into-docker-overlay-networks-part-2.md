@@ -66,7 +66,7 @@ analysis (a few fields have been removed for readability):
 - the "inner" frame, with IP 192.168.0.100 and 192.168.0.2 (our containers)
 and an ICMP payload. We can also see the MAC addresses of our containers.
 
-<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/connectivity-vxlanpacket.png" alt="Connectivity with VXLAN packet" style="margin: 0px auto;display:block;" />
+<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/connectivity-vxlanpacket.png" alt="Connectivity with VXLAN packet" width="600" style="margin: 0px auto;display:block;" />
 
 ## Resolving container names and location
 We have seen that we can ping containers on docker0 from containers on docker1
@@ -161,7 +161,7 @@ We can see that the MAC addresses for our two containers on docker0 are in the
 database with a permanent flag. This information is also dynamically populated
 by Docker.
 
-<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/connectivity-with-arp-fdb.png" alt="Connectivity with ARP and FDB" style="margin: 0px auto;display:block;" />
+<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/connectivity-with-arp-fdb.png" alt="Connectivity with ARP and FDB" width="600" style="margin: 0px auto;display:block;" />
 
 
 ## Distribution of MAC/FDB information
@@ -170,7 +170,7 @@ automatically. How is this done?
 
 We can first look at the content of Consul. What is stored in there?
 
-<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/consul-with-network.png" alt="Consul content with network" style="margin: 0px auto;display:block;" />
+<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/consul-with-network.png" alt="Consul content with network" width="600" style="margin: 0px auto;display:block;" />
 
 The network that was empty when we started now contains information and we can
 recognize the id of our overlay:
@@ -309,7 +309,7 @@ leave 192.168.0.2 255.255.255.0 02:42:c0:a8:00:02
 The Docker daemon subscribes to these events to create and remove entries in the
 ARP and FDB tables.
 
-<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/connectivity-complete.png" alt="Complete Connectivity" style="margin: 0px auto;display:block;" />
+<img src="/assets/2017-05-09-deep-dive-into-docker-overlay-networks-part-2/connectivity-complete.png" alt="Complete Connectivity" width="600" style="margin: 0px auto;display:block;" />
 
 In Swarm mode, Docker does not rely on Serf to synchronize information between
 nodes but relies on its own implementation of the Gossip protocol. It
