@@ -3,7 +3,13 @@ layout: default
 ---
 
 <div align="right">
-    By {{ page.author }}{% if page.twitter != null %} - <a href="https://twitter.com/{{ page.twitter }}">@{{ page.twitter }}</a>{% endif %}, {{ page.date | date_to_string }}
+    By {{ page.author }}
+    {% if page.twitter != null %}
+    <a href="https://twitter.com/{{ page.twitter }}">
+      <i class="fa fa-twitter" aria-hidden="true"></i>
+    </a>
+    {% endif %},
+    {{ page.date | date_to_string }}
 </div>
 {% include home-icon-link.html %}
 {{ content }}
