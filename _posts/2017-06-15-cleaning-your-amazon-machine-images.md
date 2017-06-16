@@ -7,28 +7,35 @@ keywords: aws, ec2, ami, continous integration, continous deployment
 ---
 
 ## Introduction
-At D2SI, we help companies operate their workloads in the cloud either by moving existing ones or going from scratch.
-One of the first steps is often `continuous integration` and `continous deployment`.
-A common and simple pattern I've seen on the **AWS** cloud is:
+At [D2SI](http://www.d2-si.fr/), we help companies operate their workloads in
+the cloud either by moving existing ones or starting from scratch.
+One of the first steps is often implementing `continuous integration` and
+`continous deployment`.
+A typical pattern I've seen on **AWS** is:
 
-- **AMI (Amazon Machine Image)** baking to prepare future instance to start with the newest application version, steps including (more or less):
+- Backing an **AMI (Amazon Machine Image)** so that virtual machines are
+  instanciated ith the newest application version; this involves steps like:
   * System and kernel updates
   * Security patches
   * Application package dependencies
   * Application code deployment
-- Using **CloudFormation** or **Terraform** to then deploy/update the stack.
+- Using **CloudFormation** or **Terraform** to deploy and update the stack
 
-It's pretty basic and works very well, but after many deployments we end up cumulating unecessary old and unsued __AMIs__.
-Well, someone got the do the dirty work of cleaning, because they are not for free *and your listing can get messy*.
+It's pretty basic and works very well, but after many deployments we end up
+accumulating old and unsued __AMIs__.
+Someone's got to do the dirty work of cleaning, because storing these comes at a
+cost *and your listing can get messy*.
 
 
 ## Why bother creating another tool ?
 
-The answer is simple, if you've ever done that you probably know that an AMI can be associated to one or more EBS snapshots.
-The operation to **deregister** an AMI does not remove associated snapshots.
+The answer is simple: if you've ever worked with your own AMIs, you probably know
+that it can be associated to one or more EBS snapshots.
+The operation to **deregister** an AMI does not remove the associated snapshots.
 
-When I started to think about doing this in a automated way,
-I had only one requirement to just remove an AMI with it's snapshots, so I started with a very basic shell script like this:
+When I started to think about automating this, I had only one requirement: to
+remove an AMI and its snapshots.
+I started then with a very basic shell script:
 
 ```bash
 for ami in $ami_ids; do
@@ -38,16 +45,18 @@ for ami in $ami_ids; do
 done
 ```
 
-Sooner, my list of requirements grew up and I had to maintain this script wich became a real pain with my level of bash scripting.
-I decided then to move it to **python** because:
- * **python** is easy, people with whom I work could contribute
+Soon my list of requirements grew up and I had to maintain this script wich
+became a real pain because of my bash scripting level.
+I decided to rewrite it in **python** because:
+ * **python** is easy, people with whom I work with could contribute
  * **AWS** has a great python sdk: boto3
- * As a great fan of Test Driven Developement, I could use quite easily **moto**, a python library to mock AWS endpoints.
+ * As a great fan of Test Driven Developement, I could easily use **moto**, a python library to mock AWS endpoints
 
 
 ## Introducing aws-amicleaner
 
-I created this project on [Github](https://github.com/bonclay7/aws-amicleaner) and packaged it also on **pypi**.
+I created this project on [Github](https://github.com/bonclay7/aws-amicleaner)
+and packaged it on **pypi** as well.
 You can install it with:
 
 ```bash
@@ -61,22 +70,22 @@ $ amicleaner --version
 0.1.2
 ```
 
-The first thing I had to do was to cover the very basic first requirement: remove a list of AMI ids with their snaphots:
+The first thing I had to do was to cover my first requirement: remove a list of AMI ids and their snaphots:
 
 ```bash
 amicleaner --from-ids ami-12345678 ami-23456789
 ```
 
-Well, it does more than that. Here's the list of all the features included in this project at this time:
+It actually does a bit more than that, at of today it allows:
 
 * Removing a list of images and associated snaphots
 * Mapping AMIs:
   * Using names
   * Using tags
 * Filtering AMIs:
-  * being used by running instances.
-  * from autoscaling groups (launch configurations) with desired capacity set to 0.
-  * from launch configurations detached from autoscaling groups.
+  * used by running instances
+  * from autoscaling groups (launch configurations) with a desired capacity set to 0
+  * from launch configurations detached from autoscaling groups
 * Specifying how many AMIs you want to keep
 * Cleaning orphan snapshots
 * A bit of reporting
@@ -84,13 +93,14 @@ Well, it does more than that. Here's the list of all the features included in th
 
 ## Diving in the features
 
-Now, let's describe the tool features with a real life example.
-Let's say I have 20 images to be deleted with two tags (`environment` and `role`) and categorized as following:
+Now, let's have a look at some of its features using a real life example.
+Let's say I have 20 images to be deleted with two tags (`environment` and `role`) and categorized as follow:
 
 * 5 `front` images in `dev` and `prod`
 * 5 `back` images in `dev` and `prod`
 
-In this example, I have neither running instances nor autoscaling groups / launch configurations.
+In this example, I have no running instances nor autoscaling groups / launch
+configurations.
 
 
 <div align="center">
@@ -100,8 +110,9 @@ In this example, I have neither running instances nor autoscaling groups / launc
 
 ### Historization
 
-When you launch amicleaner without any arguments, the tool will 'inspect' your enviroment and look for
-the images that you own. From the list of items to be deleted, it will regroup them by using AWS tags.
+When you launch amicleaner without any arguments, it will 'inspect' your
+enviroment, look for images that you own then sort and display them using AWS
+tags.
 
 
 ```console
@@ -127,12 +138,14 @@ AMIs to be removed:
 Do you want to continue and remove 4 AMIs [y/N] ? :
 ```
 
-For rollback purposes, you can keep a certain number of previous images for each group of images ready to launch your applications in any case of failure.
-amicleaner provides this functionality by default, by excluding already currently used AMIs and a additionnal number of `4` versions.
-You can override this behaviour by specifying the `keep-previous` argument. The minimum value here can be down to `0` and they are sorted by creation date.
+XXX For rollback purposes, you can keep a defined number of old images for each group of images ready to launch your applications in any case of failure.
+amicleaner provides this functionality by default, it will exclude `4` previous
+versions of currently used AMIs.
+You can override this behaviour by specifying the `keep-previous` argument.
+The minimum value is `0` and the output is sorted by creation date.
 
 ```console
-$ amicleaner --keep-previous 2                                                                                           [ruby-2.4.1p111]
+$ amicleaner --keep-previous 2
 
 Default values : ==>
 mapping_key : tags
@@ -154,9 +167,9 @@ AMIs to be removed:
 Do you want to continue and remove 12 AMIs [y/N] ? :
 ```
 
-Note that values not matching the search are automatically excluded: `no-tags (excluded)`
+Values not matching the search are automatically excluded: `no-tags (excluded)`.
 
-You can see what's being done behind the [scenes](https://github.com/bonclay7/aws-amicleaner/blob/master/amicleaner/core.py#L225-L245):
+Let's see how it's done behind the [scenes](https://github.com/bonclay7/aws-amicleaner/blob/master/amicleaner/core.py#L225-L245):
 
 ```python
 def reduce_candidates(self, mapped_candidates_ami, keep_previous=0):
@@ -184,16 +197,18 @@ def reduce_candidates(self, mapped_candidates_ami, keep_previous=0):
 
 ### Mapping and filtering
 
-By default, amicleaner use two tags to perform the search `environment` and `role`.
-You can provide your own tags by specifying your `mapping-key`. The supported values are:
+By default, amicleaner uses two tags to perform the search: `environment` and `role`.
+You can provide your own tags by specifying a `mapping-key`.
+Supported values are:
 
-* `name`:
+* `name`
 
-Here, it will use the name of the AMI to do the search. You are free to give only a part of the name.
-You can alse use the `full-report` option for more details
+Search is performed using the name of the AMI.
+You are free to give only part of the name.
+You can alse use the `full-report` option to display more details.
 
 ```console
-$ amicleaner --mapping-key name --mapping-values front --full-report --keep-previous 8                                   [ruby-2.4.1p111]
+$ amicleaner --mapping-key name --mapping-values front --full-report --keep-previous 8
 
 Default values : ==>
 mapping_key : name
@@ -219,15 +234,16 @@ AMIs to be removed:
 Do you want to continue and remove 2 AMIs [y/N] ? :
 ```
 
-* `tags`:
+* `tags`
 
-Search is perform with a combination of given tag `keys`. The combination of same values are mapped togther and Historization is applied on the result.
+Search is performed using a combination of given tag `keys`. The combination of
+same values are mapped togther and historization is applied on the results.
 
-Note that the order of tag keys are preserved during the evaluation.
+Note that order of the tag keys is preserved during the evaluation.
 
 
 ```console
-$ amicleaner --mapping-key tags --mapping-values environment role --full-report --keep-previous 3                        [ruby-2.4.1p111]
+$ amicleaner --mapping-key tags --mapping-values environment role --full-report --keep-previous 3
 
 Default values : ==>
 mapping_key : tags
@@ -290,7 +306,7 @@ AMIs to be removed:
 Do you want to continue and remove 8 AMIs [y/N] ? :
 ```
 
-Here's a piece of the code to flatten the tags :
+Here's the piece of the code that flattens the tags:
 
 ```python
 def tags_values_to_string(tags, filters=None):
@@ -317,7 +333,7 @@ def tags_values_to_string(tags, filters=None):
 ```
 
 
-### Cleaning snapshots left orphan
+### Cleaning orphan snapshots
 
 Before writing this tool, I have been cleaning my images without removing the associated snapshots.
 
@@ -329,7 +345,9 @@ Long story short, there's a `Description` property of the resulting snapshot fil
 Created by CreateImage(i-06a469f2d64822242) for ami-654b5503 from vol-06caf0d5af00505e7
 ```
 
-For snapshot cleaning, I do not take many risks. There's no rocket science, I call `describe-snaphot` ec2 api and filter with `Created by CreateImage*`
+For snapshot cleaning, I am not taking any risk: I just just call the
+`describe-snaphot` ec2 api and filter the output using `Created by CreateImage*`.
+It's not rocket science.
 
 
 ```python
@@ -348,12 +366,15 @@ def get_snapshots_filter(self):
 
 ```
 
-That's maybe a subject for improvement.
+There's probably a good opportunity for improvement.
 
 
 ## Conclusion
 
-There are some optimization that could be done, many improvements such as python3 support for example.
-Feel free to use it, abuse it, open issues if you face some bugs or have another ideas and contribute with pull requests.
+A few improvements and optimizations could still be made and adding python3 support
+would be a good idea.
+Feel free to use this tool, abuse it, open issues if you run into bugs or would
+like new features to be implemented.
+[Contributions are welcome!](https://github.com/bonclay7/aws-amicleaner/blob/master/CONTRIBUTING.rst)
 
 One more thing, in all the tests above, you saw that there's an interaction asking for confirmation. There is an `--force-delete` or `-f` that can be useful for automation purposes.
