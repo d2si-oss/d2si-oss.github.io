@@ -1,7 +1,7 @@
 ---
 author: Guy Rodrigue Koffi
 layout: post
-title: "Cleaning your Amazon Machine Images (AMI)"
+title: "Garbage collecting Amazon Machine Images (AMI)"
 twitter: bonclay7
 keywords: aws, ec2, ami, continous integration, continous deployment
 ---
@@ -10,11 +10,11 @@ keywords: aws, ec2, ami, continous integration, continous deployment
 At [D2SI](http://www.d2-si.fr/), we help companies operate their workloads in
 the cloud either by moving existing ones or starting from scratch.
 One of the first steps is often implementing `continuous integration` and
-`continous deployment`.
+`continuous deployment`.
 A typical pattern I've seen on **AWS** is:
 
 - Backing an **AMI (Amazon Machine Image)** so that virtual machines are
-  instanciated ith the newest application version; this involves steps like:
+  instanciated with the newest application version; this involves steps like:
   * System and kernel updates
   * Security patches
   * Application package dependencies
@@ -27,7 +27,7 @@ Someone's got to do the dirty work of cleaning, because storing these comes at a
 cost *and your listing can get messy*.
 
 
-## Why bother creating another tool ?
+## Why bother creating another tool?
 
 The answer is simple: if you've ever worked with your own AMIs, you probably know
 that it can be associated to one or more EBS snapshots.
@@ -138,7 +138,7 @@ AMIs to be removed:
 Do you want to continue and remove 4 AMIs [y/N] ? :
 ```
 
-XXX For rollback purposes, you can keep a defined number of old images for each group of images ready to launch your applications in any case of failure.
+For rollback purposes, you can keep a defined number of old images.
 amicleaner provides this functionality by default, it will exclude `4` previous
 versions of currently used AMIs.
 You can override this behaviour by specifying the `keep-previous` argument.
