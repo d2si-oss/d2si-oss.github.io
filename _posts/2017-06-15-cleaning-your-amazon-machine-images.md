@@ -367,6 +367,9 @@ def get_snapshots_filter(self):
 ```
 
 There's probably a good opportunity for improvement.
+One more thing: while all above tests were done in interacting mode (asking for
+confirmation), there is an `--force-delete` or `-f` that can be useful for
+automation purposes.
 
 
 ## Conclusion
@@ -376,5 +379,3 @@ would be a good idea.
 Feel free to use this tool, abuse it, open issues if you run into bugs or would
 like new features to be implemented.
 [Contributions are welcome!](https://github.com/bonclay7/aws-amicleaner/blob/master/CONTRIBUTING.rst)
-
-One more thing, in all the tests above, you saw that there's an interaction asking for confirmation. There is an `--force-delete` or `-f` that can be useful for automation purposes.
