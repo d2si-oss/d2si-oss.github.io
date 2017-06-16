@@ -14,7 +14,7 @@ One of the first steps is often implementing `continuous integration` and
 A typical pattern I've seen on **AWS** is:
 
 - Backing an **AMI (Amazon Machine Image)** so that virtual machines are
-  instanciated with the newest application version; this involves steps like:
+  instantiated with the newest application version; this involves steps like:
   * System and kernel updates
   * Security patches
   * Application package dependencies
@@ -22,7 +22,7 @@ A typical pattern I've seen on **AWS** is:
 - Using **CloudFormation** or **Terraform** to deploy and update the stack
 
 It's pretty basic and works very well, but after many deployments we end up
-accumulating old and unsued __AMIs__.
+accumulating old and unused __AMIs__.
 Someone's got to do the dirty work of cleaning, because storing these comes at a
 cost *and your listing can get messy*.
 
@@ -45,7 +45,7 @@ for ami in $ami_ids; do
 done
 ```
 
-Soon my list of requirements grew up and I had to maintain this script wich
+Soon my list of requirements grew up and I had to maintain this script which
 became a real pain because of my bash scripting level.
 I decided to rewrite it in **python** because:
  * **python** is easy, people with whom I work with could contribute
@@ -70,7 +70,7 @@ $ amicleaner --version
 0.1.2
 ```
 
-The first thing I had to do was to cover my first requirement: remove a list of AMI ids and their snaphots:
+The first thing I had to do was to cover my first requirement: remove a list of AMI ids and their snapshots:
 
 ```bash
 amicleaner --from-ids ami-12345678 ami-23456789
@@ -78,7 +78,7 @@ amicleaner --from-ids ami-12345678 ami-23456789
 
 It actually does a bit more than that, at of today it allows:
 
-* Removing a list of images and associated snaphots
+* Removing a list of images and associated snapshots
 * Mapping AMIs:
   * Using names
   * Using tags
@@ -111,7 +111,7 @@ configurations.
 ### Historization
 
 When you launch amicleaner without any arguments, it will 'inspect' your
-enviroment, look for images that you own then sort and display them using AWS
+environment, look for images that you own then sort and display them using AWS
 tags.
 
 
@@ -205,7 +205,7 @@ Supported values are:
 
 Search is performed using the name of the AMI.
 You are free to give only part of the name.
-You can alse use the `full-report` option to display more details.
+You can also use the `full-report` option to display more details.
 
 ```console
 $ amicleaner --mapping-key name --mapping-values front --full-report --keep-previous 8
@@ -237,7 +237,7 @@ Do you want to continue and remove 2 AMIs [y/N] ? :
 * `tags`
 
 Search is performed using a combination of given tag `keys`. The combination of
-same values are mapped togther and historization is applied on the results.
+same values are mapped together and historization is applied on the results.
 
 Note that order of the tag keys is preserved during the evaluation.
 
