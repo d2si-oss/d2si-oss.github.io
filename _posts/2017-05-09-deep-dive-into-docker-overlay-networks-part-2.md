@@ -42,7 +42,7 @@ metadata (in particular the VXLAN ID).
 
 We can verify that traffic between our hosts is using VXLAN with tcpdump. Let's
 ping C0 from a container on docker1 and capture traffic on docker0:
-```
+```console
 docker1:~$ docker run -it --rm --net demonet debian ping 192.168.0.100
 PING 192.168.0.100 (192.168.0.100): 56 data bytes
 64 bytes from 192.168.0.100: icmp_seq=0 ttl=64 time=0.680 ms
@@ -75,31 +75,31 @@ addresses to MAC addresses and how the L2 frames are forwarded to the
 appropriate host.
 
 Let's create a container on docker1 and look at its ARP table:
-```
+```console
 docker1:~$ docker run -it --rm --net demonet debian bash
 root@6234b23677b9:/# ip neighbor show
 ```
 There is no ARP information inside the container. If we ping C0 the container
 will generate ARP traffic. Let's first see how this traffic is seen in the
 overlay namespace on docker0:
-```
+```bash
 docker0:~$ sudo ip netns exec $overns tcpdump -peni any "arp"
 ```
 Going back to our container, we will try to ping C0, which will generate an ARP
 packet:
-```
+```bash
 ping 192.168.0.100
 ```
 There is nothing in tcpdump on docker0 so the ARP traffic is not sent in the
 VXLAN tunnel. Let's recreate a container on docker1 and tcpdump in the overlay
 namespace of docker1 to verify that we are getting ARP queries.
-```
+```bash
 docker1:~$ docker run -it --rm --net demonet debian bash
 ```
 Let's run tcpdump in another window. We use ip netns to identify the namespace
 associated with the overlay. This namespace may change because the overlay
 namespace is deleted when there are no container attached to the network.
-```
+```console
 docker1:~$ sudo ip netns ls
 102022d57fab
 xx-620dd5948
@@ -107,7 +107,7 @@ docker1:~$ overns=xx-620dd5948
 docker1:~$ sudo ip netns exec $overns tcpdump -peni any "arp"
 ```
 When we ping from the window with the container, here is what we see in tcpdump:
-```
+```bash
 19:16:40.658369 Out 02:42:c0:a8:00:02 ethertype ARP (0x0806), length 44: Request who-has 192.168.0.100 tell 192.168.0.2, length 28
 19:16:40.658352   B 02:42:c0:a8:00:02 ethertype ARP (0x0806), length 44: Request who-has 192.168.0.100 tell 192.168.0.2, length 28
 19:16:40.658371  In 02:42:c0:a8:00:64 ethertype ARP (0x0806), length 44: Reply 192.168.0.100 is-at 02:42:c0:a8:00:64, length 28
@@ -115,14 +115,14 @@ When we ping from the window with the container, here is what we see in tcpdump:
 ```
 We can see the ARP query and answer, which means the overlay namespace has the
 information and that it acts as an ARP proxy. We can easily verify this:
-```
+```console
 docker1:~$ sudo ip netns exec $overns ip neigh show
 192.168.0.100 dev vxlan1 lladdr 02:42:c0:a8:00:64 PERMANENT
 ```
 The entry is flagged as PERMANENT which means it is static and was "manually"
 added and not the result of an ARP discovery. What happens if we create a second
 container on docker0?
-```
+```console
 docker0:~$ docker run -d --ip 192.168.0.200 --net demonet --name C1 debian sleep 3600
 
 docker1:~$ sudo ip netns exec $overns ip neigh show
@@ -137,7 +137,7 @@ proxy to answer ARP queries.
 If we look at the configuration of the vxlan interface, we can see that it has
 the proxy flag set which explains this behavior (we will look at the other
 options later).
-```
+```console
 docker1:~$ sudo ip netns exec $overns ip -d link show vxlan1
 xx: vxlan1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue master br0 state UNKNOWN mode DEFAULT group default
     link/ether 5a:71:8f:a4:b8:1b brd ff:ff:ff:ff:ff:ff promiscuity 1
@@ -147,7 +147,7 @@ xx: vxlan1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue master br0 
 
 What about the location of the MAC address (on which host is 02:42:c0:a8:00:64)?
 We can look at the bridge forwarding database in the overlay namespace:
-```
+```console
 docker1:~$ sudo ip netns exec $overns bridge fdb show
 sudo ip netns exec $overns bridge fdb show
 5a:71:8f:a4:b8:1b dev vxlan1 vlan 0 master br0 permanent
@@ -247,7 +247,7 @@ The script displays the main pieces of information on the container endpoints:
 
 Here is what we find out about our setup:
 
-```
+```console
 docker1:~$ python/dump_endpoints.py
 Endpoint Name: adoring_einstein
 IP address: 192.168.0.2/24
@@ -266,7 +266,7 @@ out that Docker uses Serf and its Gossip protocol to achieve this. We can easily
 verify this by subscribing to serf events on docker0 and create a container on
 docker1:
 
-```
+```console
 docker0:~$ serf agent -bind 0.0.0.0:17946 -join 10.0.0.11:7946 -node demo -log-level=debug -event-handler=./serf.sh
 #########################################
 New event: member-join
@@ -293,16 +293,16 @@ while read line; do
 ```
 
 Let's now create a container on docker1 and look at the ouput on docker0:
-```
+```bash
 docker1:~$ docker run -it --rm --net demonet debian sleep 10
 ```
 On docker0 we see:
-```
+```bash
 New event: user
 join 192.168.0.2 255.255.255.0 02:42:c0:a8:00:02
 ```
 Then after 10s when the container exits on docker1:
-```
+```bash
 New event: user
 leave 192.168.0.2 255.255.255.0 02:42:c0:a8:00:02
 ```
