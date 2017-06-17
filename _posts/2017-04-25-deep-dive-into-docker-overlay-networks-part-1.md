@@ -54,8 +54,8 @@ The first thing we need to do is to start a Consul server. To do this, we simply
 download Consul from [here](https://www.consul.io). We can then start a very
 minimal Consul service with the following command:
 
-```bash
-consul agent -server -dev -ui -client 0.0.0.0
+```console
+$ consul agent -server -dev -ui -client 0.0.0.0
 ```
 
 We use the following flags:
@@ -69,8 +69,8 @@ We use the following flags:
 To configure the Docker engines to use Consul as an Key-Value store, we start
 the daemons with the cluster-store option:
 
-```bash
-dockerd -H fd:// --cluster-store=consul://consul:8500 --cluster-advertise=eth0:2376
+```console
+$ dockerd -H fd:// --cluster-store=consul://consul:8500 --cluster-advertise=eth0:2376
 ```
 
 The cluster-advertise option specifies which IP to advertise in the cluster for
@@ -262,8 +262,8 @@ Docker does not create symlinks in the /var/run/netns directory which is where
 ip netns is looking for network namespaces. To solve this, we simply need to add
 a symlink (if you use the terraform setup this symlink is already present).
 
-```bash
-sudo ln -s /var/run/docker/netns /var/run/netns
+```console
+$ sudo ln -s /var/run/docker/netns /var/run/netns
 ```
 
 We can now run ip netns commands. For instance if we want to list network

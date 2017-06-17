@@ -82,18 +82,18 @@ root@6234b23677b9:/# ip neighbor show
 There is no ARP information inside the container. If we ping C0 the container
 will generate ARP traffic. Let's first see how this traffic is seen in the
 overlay namespace on docker0:
-```bash
-docker0:~$ sudo ip netns exec $overns tcpdump -peni any "arp"
+```console
+$ docker0:~$ sudo ip netns exec $overns tcpdump -peni any "arp"
 ```
 Going back to our container, we will try to ping C0, which will generate an ARP
 packet:
-```bash
-ping 192.168.0.100
+```console
+$ ping 192.168.0.100
 ```
 There is nothing in tcpdump on docker0 so the ARP traffic is not sent in the
 VXLAN tunnel. Let's recreate a container on docker1 and tcpdump in the overlay
 namespace of docker1 to verify that we are getting ARP queries.
-```bash
+```console
 docker1:~$ docker run -it --rm --net demonet debian bash
 ```
 Let's run tcpdump in another window. We use ip netns to identify the namespace
@@ -293,7 +293,7 @@ while read line; do
 ```
 
 Let's now create a container on docker1 and look at the ouput on docker0:
-```bash
+```console
 docker1:~$ docker run -it --rm --net demonet debian sleep 10
 ```
 On docker0 we see:
