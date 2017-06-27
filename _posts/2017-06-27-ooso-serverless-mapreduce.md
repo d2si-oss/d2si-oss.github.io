@@ -6,10 +6,10 @@ twitter: nahylothmane
 keywords: aws, serverless, lambda, mapreduce
 ---
 
-## Introduction
 <p align="center">
-  <img width="15%" src="/assets/2017-06-27-ooso/library-logo.png"/>
+  <img width="15%" src="/assets/2017-06-27-ooso-serverless-mapreduce/library-logo.png"/>
 </p>
+## Introduction
 
 Big data processing is based on scalable and parallelizable algorithms, and is implemented with tools that run on distributed systems.
 Technologies such as Hadoop or Spark are the standards for this type of processing.
@@ -25,7 +25,7 @@ But before that, let's take a quick look at the underlying architecture.
 Ooso's architecture comprises six lambda functions and three s3 buckets that coordinate to lead a MapReduce job from start to end.
 Following is the detailed architecture diagram and the workflow of the library.
 <p align="center">
-  <img src="/assets/2017-06-27-ooso/architecture.png"/>
+  <img src="/assets/2017-06-27-ooso-serverless-mapreduce/architecture.png"/>
 </p>
 
 The library workflow is as follows:
@@ -370,7 +370,7 @@ aws lambda invoke --function-name mappers_driver --invocation-type Event /dev/nu
 ## Results
 The job results in terms of duration and costs is shown by the following diagram:
 <p align="center">
-  <img width="30%" src="/assets/2017-06-27-ooso/perfs.png"/>
+  <img width="30%" src="/assets/2017-06-27-ooso-serverless-mapreduce/perfs.png"/>
 </p>
 The calculations take into account the number of invocations and the average duration of the lambdas along with the number of S3 requests.
 Lambda and S3 costs were respectively calculated using these tools: [serverlesscalc.com](http://serverlesscalc.com) and [calculator.s3.amazonaws.com/index.html](http://calculator.s3.amazonaws.com/index.html).
@@ -382,7 +382,7 @@ There are several tools for querying data stored on HDFS or S3 directly using SQ
 It is easier and more convenient to query SQL data given its declarative nature and most of us are used to it.
 
 <p align="center">
-  <img width="50%" src="/assets/2017-06-27-ooso/presto_hive.png"/>
+  <img width="50%" src="/assets/2017-06-27-ooso-serverless-mapreduce/presto_hive.png"/>
 </p>
 
 On the other hand, Ooso seems relevant for batch processing in some cases:
