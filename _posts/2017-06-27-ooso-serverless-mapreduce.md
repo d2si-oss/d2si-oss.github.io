@@ -6,15 +6,15 @@ twitter: nahylothmane
 keywords: aws, serverless, lambda, mapreduce
 ---
 
-<p align="center">
-  <img width="15%" src="/assets/2017-06-27-ooso-serverless-mapreduce/library-logo.png"/>
-</p>
 ## Introduction
-
 Big data processing is based on scalable and parallelizable algorithms, and is implemented with tools that run on distributed systems.
 Technologies such as Hadoop or Spark are the standards for this type of processing.
 While these frameworks are mature, powerful and supported by a huge community, the preparation of the infrastructure that these tools require is complex and not always possible.
 The idea behind Ooso is to take advantage of the great parallelization and scalability of the serverless to do the processing, without having to manage any servers.
+
+<p align="center">
+  <img width="15%" src="/assets/2017-06-27-ooso-serverless-mapreduce/library-logo.png"/>
+</p>
 
 Ooso leverages powerful managed services such as [AWS Lambda](https://aws.amazon.com/lambda/) and [Amazon S3](https://aws.amazon.com/s3/) to run [MapReduce](https://en.wikipedia.org/wiki/MapReduce) jobs with reasonable performance and costs. It lets you tackle many Big Data use cases such as Ad Hoc queries and Batch processing (Data cleaning and enrichment), while focusing on your business logic rather than operational constraints.
 
