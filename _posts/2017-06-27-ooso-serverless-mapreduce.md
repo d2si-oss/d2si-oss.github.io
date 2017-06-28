@@ -10,7 +10,7 @@ keywords: aws, serverless, lambda, mapreduce
 Big data processing is based on scalable and parallelizable algorithms, and is implemented with tools that run on distributed systems.
 Technologies such as Hadoop or Spark are the standards for this type of processing.
 While these frameworks are mature, powerful and supported by a huge community, the preparation of the infrastructure that these tools require is complex and not always possible.
-The idea behind Ooso is to take advantage of the great parallelization and scalability of the serverless to do the processing, without having to manage any servers.
+The idea behind [Ooso](https://github.com/d2si-oss/ooso) is to take advantage of the great parallelization and scalability of the serverless to do the processing, without having to manage any servers.
 
 <p align="center">
   <img width="15%" src="/assets/2017-06-27-ooso-serverless-mapreduce/library-logo.png"/>
