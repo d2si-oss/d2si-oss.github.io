@@ -35,7 +35,7 @@ The library workflow is as follows:
   <li>The <code>Mappers Driver</code> does two things:
     <ol type="i">
         <li>It computes batches of data splits and assigns each batch to a <code>Mapper</code></li>
-        <li>It invokes a <code>Mappers Listener</code> lambda function which is responsible of detecting the end of the map phase</li>
+        <li>It invokes a <code>Mappers Listener</code> lambda function which is responsible for detecting the end of the map phase</li>
     </ol>
   </li>
   <li>Once the <code>Mappers Listener</code> detects the end of the map phase, it invokes a first instance of the <code>Reducers Driver</code> function</li>
@@ -72,7 +72,6 @@ Our project needs to follow the standard Maven structure:
 ```
 .
 ├── package.sh
-├── generate_job_id.py
 ├── provide_job_info.py
 ├── pom.xml
 └── src
@@ -89,7 +88,7 @@ The `mapper` and `reducer` packages respectively contain the definition of our `
 
 The json file `jobInfo.json` will be used by the library to do various things as we will see shortly.
 
-The scripts `package.sh`, `generate_job_id.py` and `provide_job_info.py` are used during the packaging and deployment and are already provided in the [library repository](https://github.com/d2si-oss/ooso/tree/master/example-project).
+The scripts `package.sh` and `provide_job_info.py` are used during the packaging and deployment and are already provided in the [library repository](https://github.com/d2si-oss/ooso/tree/master/example-project).
 
 ### Declaring the dependencies
 We declare the library dependency in the `pom.xml` file as follows:
@@ -99,7 +98,7 @@ We declare the library dependency in the `pom.xml` file as follows:
         <dependency>
             <groupId>fr.d2-si</groupId>
             <artifactId>ooso</artifactId>
-            <version>0.0.3</version>
+            <version>0.0.4</version>
         </dependency>
     ...
     </dependencies>
@@ -215,6 +214,27 @@ public String reduce(List<ObjectInfoSimple> batch) {
 }
 ```
 
+Before jumping into the configuration and deployment part, we need to create our `Launcher`.
+
+The `Launcher` will be responsible of serializing our `Mapper` and `Reducer` before sending them to the `Mappers Driver` and starting the job.
+
+All you need to do is to create a class with a main method and instantiate a `Launcher` that points to your `Mapper` and `Reducer`. Your class should look like this:
+ ```java
+import fr.d2si.ooso.launcher.Launcher;
+
+public class JobLauncher {
+    public static void main(String[] args) {
+        //setup the launcher
+        Launcher myLauncher = new Launcher()
+                                        .withMapper(new Mapper())
+                                        .withReducer(new Reducer());
+        //launch the job
+        myLauncher.launchJob();
+    }
+}
+ ```
+We can omit specifying a `Reducer` for this specific job since it will be discarded anyway.
+
 ### Configuring the job
 The configuration file is used by the library to compute the number of files attributed to the mappers and reducers.
 It is also used to turn the reducers on or off, declare the buckets used by the various layers of the library, etc.
@@ -223,7 +243,7 @@ The jobId attribute is used to prefix the mappers and reducers outputs to avoid 
 For our job, we can edit the configuration file as follows:
 ```json
 {
-  "jobId": "",
+  "jobId": "my-job-id",
   "jobInputBucket": "input-bucket/data-prefix",
   "mapperOutputBucket": "mappers-bucket",
   "reducerOutputBucket": "reducers-bucket",
@@ -245,7 +265,7 @@ For our job, we can edit the configuration file as follows:
 Before deploying our lambda functions, we need to package the project in the jar format. It is straightforward to do so using Maven.
 Make sure you [installed Maven](https://maven.apache.org/install.html) before proceeding.
 
-As we saw earlier, you may use the script `package.sh` that we provided to automate the jobId generation and the packaging as follows:
+As we saw earlier, you may use the script `package.sh` that we provided to package your project:
 ```
 ./package.sh
 ```
@@ -258,7 +278,7 @@ Our Terraform template relies on data from the configuration file.
 Fortunately, Terraform enables you to read external data and use it in your resources declaration.
 This is possible using what we call an external data source.
 
-Following is the description of my external data source, it uses the `provide_job_info.py` script to make the content of a json document available for use inside the template:
+Following is the description of our external data source, it uses the `provide_job_info.py` script to make the content of a json document available for use inside the template:
 ```hcl
 data "external" "jobInfo" {
   program = [
@@ -352,6 +372,8 @@ resource "aws_lambda_function" "mappers_driver" {
 
 We can define the rest of the lambdas similarly. Visit the [github repository](https://github.com/d2si-oss/ooso) for further details.
 
+**Note that you'll only need to deploy the lambdas once. You will be able to run all your jobs even if your business code changes without redeploying the infrastructure.**
+
 We can now proceed to the deployment of the infrastructure using the following commands:
 ```bash
  #determines what actions are necessary to achieve the desired state specified in the configuration files
@@ -361,10 +383,11 @@ We can now proceed to the deployment of the infrastructure using the following c
  terraform apply
 ```
 
+
 ### Running the job
-Running the job is as simple as invoking the `Mappers Drivers` lambda using the aws cli for example:
-```
-aws lambda invoke --function-name mappers_driver --invocation-type Event /dev/null
+Running the job is as easy as executing the main method that contains our `Launcher`. You can either execute it directly from your IDE or use the following command:
+```bash
+    java -cp job.jar job.JobLauncher
 ```
 
 ## Results
