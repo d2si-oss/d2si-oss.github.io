@@ -372,6 +372,8 @@ resource "aws_lambda_function" "mappers_driver" {
 
 We can define the rest of the lambdas similarly. Visit the [github repository](https://github.com/d2si-oss/ooso) for further details.
 
+**Note that you'll only need to deploy the lambdas once. You will be able to run all your jobs even if your business code changes without redeploying the infrastructure.**
+
 We can now proceed to the deployment of the infrastructure using the following commands:
 ```bash
  #determines what actions are necessary to achieve the desired state specified in the configuration files
@@ -380,6 +382,7 @@ We can now proceed to the deployment of the infrastructure using the following c
  #starts the deployment
  terraform apply
 ```
+
 
 ### Running the job
 Running the job is as easy as executing the main method that contains our `Launcher`. You can either execute it directly from your IDE or use the following command:
