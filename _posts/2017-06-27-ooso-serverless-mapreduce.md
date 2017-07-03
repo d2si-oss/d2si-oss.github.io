@@ -35,7 +35,7 @@ The library workflow is as follows:
   <li>The <code>Mappers Driver</code> does two things:
     <ol type="i">
         <li>It computes batches of data splits and assigns each batch to a <code>Mapper</code></li>
-        <li>It invokes a <code>Mappers Listener</code> lambda function which is responsible of detecting the end of the map phase</li>
+        <li>It invokes a <code>Mappers Listener</code> lambda function which is responsible for detecting the end of the map phase</li>
     </ol>
   </li>
   <li>Once the <code>Mappers Listener</code> detects the end of the map phase, it invokes a first instance of the <code>Reducers Driver</code> function</li>
