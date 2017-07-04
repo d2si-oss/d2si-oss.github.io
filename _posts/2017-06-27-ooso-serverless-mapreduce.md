@@ -48,7 +48,7 @@ The library workflow is as follows:
 <li>Once the <code>Reducers Listener</code> detects the end of a reduce step, it decides whether to invoke the next <code>Reducers Driver</code> if the previous reduce step produced more than one file. Otherwise, there is no need to invoke a <code>Reducers Driver</code>, because the previous step would have produced one single file which is the result of the job</li>
 </ol>
 
-## Batch processing with Ooso
+## Example of batch processing with Ooso
 In the following sections of the article, we are going to see how easy it is to use Ooso to enrich data at rest, which is one of the frequent use cases of Big Data tools.
 We are going to use a dataset that contains records about [yellow taxi trips in New York City](http://www.nyc.gov/html/tlc/html/about/trip_record_data.shtml). These records include fields capturing pick-up and drop-off dates/times, pick-up and drop-off locations, trip distances, itemized fares, rate types, payment types, and driver-reported passenger counts.
 The objective is to replace the ratecode with a textual value using an external data source that maps each ratecode to its real value.
