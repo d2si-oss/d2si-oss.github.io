@@ -52,11 +52,17 @@ The library workflow is as follows:
 In the following sections of the article, we are going to see how easy it is to use Ooso to enrich data at rest, which is one of the frequent use cases of Big Data tools.
 We are going to use a dataset that contains records about [yellow taxi trips in New York City](http://www.nyc.gov/html/tlc/html/about/trip_record_data.shtml). These records include fields capturing pick-up and drop-off dates/times, pick-up and drop-off locations, trip distances, itemized fares, rate types, payment types, and driver-reported passenger counts.
 The objective is to replace the ratecode with a textual value using an external data source that maps each ratecode to its real value.
+
+<p align="center">
+  <img width="100%" src="/assets/2017-06-27-ooso-serverless-mapreduce/example.png"/>
+</p>
+
 We can summarize the steps as follows:
 - Preparing the data
 - Creating the project skeleton
 - Declaring the dependencies
 - Writing our Map and Reduce Logic
+- Writing our Launcher
 - Configuring the job
 - Packaging the job and deploying the lambda functions and s3 buckets
 - Running the job
@@ -214,6 +220,7 @@ public String reduce(List<ObjectInfoSimple> batch) {
 }
 ```
 
+### Writing our Launcher
 Before jumping into the configuration and deployment part, we need to create our `Launcher`.
 
 The `Launcher` will be responsible of serializing our `Mapper` and `Reducer` before sending them to the `Mappers Driver` and starting the job.
@@ -234,6 +241,29 @@ public class JobLauncher {
 }
  ```
 We can omit specifying a `Reducer` for this specific job since it will be discarded anyway.
+
+In order to make our jar package executable, we need to set the main class that serves as the application entry point.
+
+If you are using the maven shade plugin, you can do so as follows:
+```xml
+<build>
+    ...
+        <plugins>
+            <plugin>
+                ...
+                <configuration>
+                    <transformers>
+                        <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                            <mainClass>job.JobLauncher</mainClass>
+                        </transformer>
+                    </transformers>
+                </configuration>
+                ...
+            </plugin>
+        </plugins>
+    ...
+    </build>
+```
 
 ### Configuring the job
 The configuration file is used by the library to compute the number of files attributed to the mappers and reducers.
@@ -387,7 +417,7 @@ We can now proceed to the deployment of the infrastructure using the following c
 ### Running the job
 Running the job is as easy as executing the main method that contains our `Launcher`. You can either execute it directly from your IDE or use the following command:
 ```bash
-    java -cp job.jar job.JobLauncher
+    java -jar job.jar
 ```
 
 ## Results
