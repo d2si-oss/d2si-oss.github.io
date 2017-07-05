@@ -302,7 +302,31 @@ As we saw earlier, you may use the script `package.sh` that we provided to packa
 
 For the deployment part, we will be using Terraform which enables you to safely and predictably create, change, and improve production infrastructure. It is an open source tool that codifies APIs into declarative configuration files that can be shared amongst team members, treated as code, edited, reviewed, and versioned.
 
-Note that you don't have to go through all the steps discussed below. We already provided the result template [here](https://github.com/d2si-oss/ooso/tree/master/example-project/terraform).
+We already provided a fully functional template [here](https://github.com/d2si-oss/ooso/tree/master/examples/batch-processing-example/terraform).
+We will talk about the details of the template later.
+
+**Note that you'll only need to deploy the lambdas once. You will be able to run all your jobs even if your business code changes without redeploying the infrastructure.**
+
+We can deploy the infrastructure using the following commands:
+```bash
+ #change the current directory to the location of your terraform template
+ cd terraform
+
+ #determines what actions are necessary to achieve the desired state specified in the configuration files
+ terraform plan
+
+ #starts the deployment
+ terraform apply
+```
+
+### Running the job
+Running the job is as easy as executing the main method that contains our `Launcher`. You can either execute it directly from your IDE or use the following command:
+```bash
+    java -jar job.jar
+```
+
+## Diving into Terraform details
+In this section, we are going to talk in more details about the Terraform template definition.
 
 Our Terraform template relies on data from the configuration file.
 Fortunately, Terraform enables you to read external data and use it in your resources declaration.
@@ -321,7 +345,7 @@ data "external" "jobInfo" {
 }
 ```
 
-As we saw earlier, we need to create two buckets, one for the mappers and another for the reducers:
+As we saw earlier, we needed to create two buckets, one for the mappers and another for the reducers:
 ```hcl
 resource "aws_s3_bucket" "mapperOutputBucket" {
   bucket        = "${data.external.jobInfo.result.mapperOutputBucket}"
@@ -332,7 +356,7 @@ resource "aws_s3_bucket" "reducerOutputBucket" {
 }
 ```
 
-We also need a role for our lambdas with the necessary policies attached. A role is similar to a user, in that it is an AWS identity with permission policies that determine what the identity can and cannot do in AWS.
+We also needed a role for our lambdas with the necessary policies attached. A role is similar to a user, in that it is an AWS identity with permission policies that determine what the identity can and cannot do in AWS.
 Our role must be able to execute lambda functions and interact with S3, hence the use of the `AWSLambdaFullAccess` and `AmazonS3FullAccess` policies:
 ```hcl
 resource "aws_iam_role" "iamForLambda" {
@@ -400,25 +424,7 @@ resource "aws_lambda_function" "mappers_driver" {
 }
 ```
 
-We can define the rest of the lambdas similarly. Visit the [github repository](https://github.com/d2si-oss/ooso) for further details.
-
-**Note that you'll only need to deploy the lambdas once. You will be able to run all your jobs even if your business code changes without redeploying the infrastructure.**
-
-We can now proceed to the deployment of the infrastructure using the following commands:
-```bash
- #determines what actions are necessary to achieve the desired state specified in the configuration files
- terraform plan
-
- #starts the deployment
- terraform apply
-```
-
-
-### Running the job
-Running the job is as easy as executing the main method that contains our `Launcher`. You can either execute it directly from your IDE or use the following command:
-```bash
-    java -jar job.jar
-```
+The rest of the lambdas are defined similarly. Visit the [github repository](https://github.com/d2si-oss/ooso) for further details.
 
 ## Results
 The job results in terms of duration and costs is shown by the following diagram:
