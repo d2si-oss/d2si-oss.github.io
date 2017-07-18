@@ -400,7 +400,7 @@ $ sudo nsenter --net=$overns ip -d link show
 2: br0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UP mode DEFAULT group default
     link/ether 3a:2d:44:c0:0e:aa brd ff:ff:ff:ff:ff:ff promiscuity 0
     bridge
-5: vxlan1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue master br0 state UNKNOWN mode DEFAULT group default
+5: vxlan0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue master br0 state UNKNOWN mode DEFAULT group default
     link/ether 4a:23:72:a3:fc:e3 brd ff:ff:ff:ff:ff:ff promiscuity 1
     vxlan id 256 srcport 10240 65535 dstport 4789 proxy l2miss l3miss ageing 300
     bridge_slave
@@ -414,7 +414,7 @@ The overlay network namespace contains three interfaces (and lo):
 - br0: a bridge
 - veth2: a veth interface which is the peer interface of eth0 in our container
   and which is connected to the bridge
-- vxlan1: an interface of type "vxlan" which is also connected to the bridge
+- vxlan0: an interface of type "vxlan" which is also connected to the bridge
 
 The vxlan interface is clearly where the "overlay magic" is happening and we are
 going to look at it in details but let's update our diagram first:

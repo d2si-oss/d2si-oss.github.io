@@ -83,28 +83,31 @@ There is no ARP information inside the container. If we ping C0 the container
 will generate ARP traffic. Let's first see how this traffic is seen in the
 overlay namespace on docker0:
 ```console
-$ docker0:~$ sudo ip netns exec $overns tcpdump -peni any "arp"
+docker0:~$ sudo nsenter --net=$overns tcpdump -peni any "arp"
 ```
+
 Going back to our container, we will try to ping C0, which will generate an ARP
 packet:
 ```console
 $ ping 192.168.0.100
 ```
 There is nothing in tcpdump on docker0 so the ARP traffic is not sent in the
-VXLAN tunnel. Let's recreate a container on docker1 and tcpdump in the overlay
-namespace of docker1 to verify that we are getting ARP queries.
+VXLAN tunnel (you may see ARP requests but no for host 192.168.0.100). Let's
+recreate a container on docker1 and tcpdump in the overlay namespace of docker1 
+to verify that we are getting ARP queries.
 ```console
 docker1:~$ docker run -it --rm --net demonet debian bash
 ```
-Let's run tcpdump in another window. We use ip netns to identify the namespace
-associated with the overlay. This namespace may change because the overlay
-namespace is deleted when there are no container attached to the network.
+Let's run tcpdump in another window. We list the Docker network namespaces to 
+identify the namespace associated with the overlay. This namespace may change
+because the overlay namespace is deleted when there are no container attached 
+to the network.
 ```console
-docker1:~$ sudo ip netns ls
+docker1:~$ sudo ls -1 /var/run/docker/netns
 102022d57fab
 xx-620dd5948
 docker1:~$ overns=xx-620dd5948
-docker1:~$ sudo ip netns exec $overns tcpdump -peni any "arp"
+docker1:~$ sudo nsenter --net=$overns tcpdump -peni any "arp"
 ```
 When we ping from the window with the container, here is what we see in tcpdump:
 ```bash
@@ -116,8 +119,8 @@ When we ping from the window with the container, here is what we see in tcpdump:
 We can see the ARP query and answer, which means the overlay namespace has the
 information and that it acts as an ARP proxy. We can easily verify this:
 ```console
-docker1:~$ sudo ip netns exec $overns ip neigh show
-192.168.0.100 dev vxlan1 lladdr 02:42:c0:a8:00:64 PERMANENT
+docker1:~$ sudo nsenter --net=$overns ip neigh show
+192.168.0.100 dev vxlan0 lladdr 02:42:c0:a8:00:64 PERMANENT
 ```
 The entry is flagged as PERMANENT which means it is static and was "manually"
 added and not the result of an ARP discovery. What happens if we create a second
@@ -125,9 +128,9 @@ container on docker0?
 ```console
 docker0:~$ docker run -d --ip 192.168.0.200 --net demonet --name C1 debian sleep 3600
 
-docker1:~$ sudo ip netns exec $overns ip neigh show
-192.168.0.200 dev vxlan1 lladdr 02:42:c0:a8:00:c8 PERMANENT
-192.168.0.100 dev vxlan1 lladdr 02:42:c0:a8:00:64 PERMANENT
+docker1:~$ sudo nsenter --net=$overns ip neigh show
+192.168.0.200 dev vxlan0 lladdr 02:42:c0:a8:00:c8 PERMANENT
+192.168.0.100 dev vxlan0 lladdr 02:42:c0:a8:00:64 PERMANENT
 ```
 The entry has been added automatically, even if no traffic was sent to this new
 container yet. This means that Docker is automatically populating the ARP
@@ -138,8 +141,8 @@ If we look at the configuration of the vxlan interface, we can see that it has
 the proxy flag set which explains this behavior (we will look at the other
 options later).
 ```console
-docker1:~$ sudo ip netns exec $overns ip -d link show vxlan1
-xx: vxlan1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue master br0 state UNKNOWN mode DEFAULT group default
+docker1:~$ sudo nsenter --net=$overns ip -d link show vxlan0
+xx: vxlan0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue master br0 state UNKNOWN mode DEFAULT group default
     link/ether 5a:71:8f:a4:b8:1b brd ff:ff:ff:ff:ff:ff promiscuity 1
     vxlan id 256 srcport 10240 65535 dstport 4789 proxy l2miss l3miss ageing 300
     bridge_slav
@@ -148,12 +151,11 @@ xx: vxlan1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue master br0 
 What about the location of the MAC address (on which host is 02:42:c0:a8:00:64)?
 We can look at the bridge forwarding database in the overlay namespace:
 ```console
-docker1:~$ sudo ip netns exec $overns bridge fdb show
-sudo ip netns exec $overns bridge fdb show
-5a:71:8f:a4:b8:1b dev vxlan1 vlan 0 master br0 permanent
+docker1:~$ sudo nsenter --net=$overns bridge fdb show
+5a:71:8f:a4:b8:1b dev vxlan0 vlan 0 master br0 permanent
 9a:ad:35:64:39:39 dev veth2 vlan 0 master br0 permanent
-02:42:c0:a8:00:c8 dev vxlan1 dst 10.0.0.10 self permanent
-02:42:c0:a8:00:64 dev vxlan1 dst 10.0.0.10 self permanent
+02:42:c0:a8:00:c8 dev vxlan0 dst 10.0.0.10 self permanent
+02:42:c0:a8:00:64 dev vxlan0 dst 10.0.0.10 self permanent
 33:33:00:00:00:01 dev veth2 self permanent
 01:00:5e:00:00:01 dev veth2 self permanent
 ```
