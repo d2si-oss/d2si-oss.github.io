@@ -241,45 +241,36 @@ We can identify the other end of a veth using the ethtool command. However this
 command is not available in our container. We can execute this command inside
 our container using "nsenter" which allows us to enter one or several namespaces
 associated with a process or using "ip netns exec" which relies on iproute to
-execute a command in a given network namespace. In our examples, we will use ip
-netns.
+execute a command in a given network namespace. Docker does not create symlinks
+in the /var/run/netns directory which is where ip netns is looking for network 
+namespaces. This is why we will rely on nsenter for namespaces created by
+Docker.
 
-The first thing we need to do is to identify the network namespace of the
-container. We can achieve this by inspecting the container, and extracting what
-we need from the SandboxKey:
-
-{% raw %}
-    docker0:~$ docker inspect C0 -f {{.NetworkSettings.SandboxKey}}
-    /var/run/docker/netns/e4b8ecb7ae7c
-
-    docker0:~$ sandbox=$(docker inspect C0 -f {{.NetworkSettings.SandboxKey}})
-    docker0:~$ C0netns=${sandbox##*/}
-    docker0:~$ echo $C0netns
-    e4b8ecb7ae7c
-{% endraw %}
-
-Docker does not create symlinks in the /var/run/netns directory which is where
-ip netns is looking for network namespaces. To solve this, we simply need to add
-a symlink (if you use the terraform setup this symlink is already present).
+To list the network namespaces created by Docker we can simply run:
 
 ```console
-$ sudo ln -s /var/run/docker/netns /var/run/netns
-```
-
-We can now run ip netns commands. For instance if we want to list network
-namespaces:
-
-```console
-docker0:~$ sudo ip netns ls
+docker0:~$ sudo ls -1 /var/run/docker/netns
 e4b8ecb7ae7c
 1-620dd59483
 ```
+
+To use this information, we need to identify the network namespace of
+containers. We can achieve this by inspecting them, and extracting what
+we need from the SandboxKey:
+
+{% raw %}
+```console
+    docker0:~$ docker inspect C0 -f {{.NetworkSettings.SandboxKey}}
+    /var/run/docker/netns/e4b8ecb7ae7c
+
+    docker0:~$ C0netns=$(docker inspect C0 -f {{.NetworkSettings.SandboxKey}})
+{% endraw %}
 
 We can also execute host commands inside the network namespace of a container
 (even if this container does not have the command):
 
 ```console
-docker0:~$ sudo ip netns exec $C0netns ip addr show eth0
+docker0:~$ sudo nsenter --net=$C0netns ip addr show eth0
 6: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UP group default
     link/ether 02:42:c0:a8:00:64 brd ff:ff:ff:ff:ff:ff
     inet 192.168.0.100/24 scope global eth0
@@ -290,24 +281,13 @@ Let's see what are the interface indexes associated with the peers of eth0 and
 eth1:
 
 ```console
-docker0:~$ sudo ip netns exec $C0netns ethtool -S eth0
+docker0:~$ sudo nsenter --net=$C0netns ethtool -S eth0
 NIC statistics:
     peer_ifindex: 7
-docker0:~$ sudo ip netns exec $C0netns ethtool -S eth1
+docker0:~$ sudo nsenter --net=$C0netns ethtool -S eth1
 NIC statistics:
     peer_ifindex: 10
 ```
-
-Using nsenter, we could execute the same commands:
-
-{% raw %}
-    docker0:~$ sandbox=$(docker inspect C0 -f {{.NetworkSettings.SandboxKey}})
-    docker0:~$ sudo nsenter --net=$sandbox ip addr show eth0
-    6: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UP group default
-        link/ether 02:42:c0:a8:00:64 brd ff:ff:ff:ff:ff:ff
-        inet 192.168.0.100/24 scope global eth0
-           valid_lft forever preferred_lft forever
-{% endraw %}
 
 We are now looking for interfaces with indexes 7 and 10. We can first look on
 the host itself:
@@ -398,12 +378,12 @@ The interface peered with eth0 is not in the host network namespace. It must be
 in another one. If we look again at the network namespaces:
 
 ```console
-docker0:~$ sudo ip netns ls
+docker0:~$ sudo ls -1 /var/run/docker/netns
 e4b8ecb7ae7c
 1-620dd59483
 ```
 
-We can see a namespace called "1-c4305b67cd". Except for the "1-", the name of
+We can see a namespace called "1-620dd59483". Except for the "1-", the name of
 this namespace is the beginning of the network id of our overlay network:
 
 {% raw %}
@@ -415,8 +395,8 @@ This namespace is clearly related to our overlay network. We can look at the
 interfaces present in that namespace:
 
 ```console
-$ overns=1-620dd59483
-$ sudo ip netns exec $overns ip -d link show
+$ overns=/var/run/docker/netns/1-620dd59483
+$ sudo nsenter --net=$overns ip -d link show
 2: br0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UP mode DEFAULT group default
     link/ether 3a:2d:44:c0:0e:aa brd ff:ff:ff:ff:ff:ff promiscuity 0
     bridge
