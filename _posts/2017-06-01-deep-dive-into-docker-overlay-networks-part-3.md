@@ -21,6 +21,7 @@ our Docker hosts by removing all our containers and the overlay network:
 ```console
 docker0:~$ docker rm -f $(docker ps -aq)
 docker0:~$ docker network rm demonet
+
 docker1:~$ docker rm -f $(docker ps -aq)
 ```
 The first we are going to do now is to create an network namespace called "overns":
@@ -193,3 +194,73 @@ PING 192.168.0.3 (192.168.0.3): 56 data bytes
 
 We have successfuly built an overlay with standard Linux commands:
 <img src="/assets/2017-06-01-deep-dive-into-docker-overlay-networks-part-3/overlay-3.png" alt="Overview of our manual overlay" width="600" style="margin: 0px auto;display:block;">
+
+## Dynamic container discovery
+We have just created an overlay from scratch. However, we need to manually
+create ARP and FDB entries for containers to talk to each other. We will now
+look at how this discovery process can be automated.
+
+Let us first clean up our setup to start from scratch:
+```console
+docker0:~$ docker rm -f $(docker ps -aq)
+docker0:~$ sudo ip netns delete overns
+
+docker1:~$ docker rm -f $(docker ps -aq)
+docker1:~$ sudo ip netns delete overns
+```
+
+### Catching network events: NETLINK
+
+Netlink is used to transfer information between the kernel and user-space
+processes: [https://en.wikipedia.org/wiki/Netlink](https://en.wikipedia.org/wiki/Netlink).
+iproute2, which we used earlier to configure interfaces, relies on Netlink
+to get/send configuration information to the kernel. It consists multiple 
+protocols ("families") to communicate with different kernel components. The most
+common protocol is NETLINK_ROUTE which is the interface for routing and link
+configuration.
+
+For each protocol, Netlink messages are organized by groups, for example for NETLINK_ROUTE
+you have:
+- RTMGRP_LINK: link related messages
+- RTMGRP_NEIGH: neighbor related messages
+- many others
+
+For each group, you then have multiple notifications, for example:
+- RTMGRP_LINK:
+    * RTM_NEWLINK: A link was created
+    * RTM_DELLINK: A link was deleted
+- RTMGRP_NEIGH:
+    * RTM_NEWNEIGH: A neighbor was added
+    * RTM_DELNEIGH: A neighbor was deleted
+    * RTM_GETNEIGH: The kernel is looking for a neighbor
+
+I described the messages received in userspace when the kernel is sending
+notifications for these events, but similar messages can be sent to the
+kernel to configure links or neighbors.
+
+We can use ip monitor to listen to netwlink events. Let's monitor for link
+information for instance:
+```console
+docker0:~$ ip monitor link
+```
+In another console on docker0, we can create a link and then delete it:
+```
+docker0:~$ sudo ip link add dev veth1 type veth peer name veth2
+docker0:~$ sudo ip link del veth1
+```
+On the first console we can see some output.
+
+When we create the interfaces:
+```console
+32: veth2: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default
+    link/ether b6:95:d6:b4:21:e9 brd ff:ff:ff:ff:ff:ff
+33: veth1: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default
+    link/ether a6:e0:7a:da:a9:ea brd ff:ff:ff:ff:ff:ff
+```
+When we remove them:
+```console
+Deleted 33: veth1: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default
+    link/ether a6:e0:7a:da:a9:ea brd ff:ff:ff:ff:ff:ff
+Deleted 32: veth2: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN group default
+    link/ether b6:95:d6:b4:21:e9 brd ff:ff:ff:ff:ff:ff
+```
