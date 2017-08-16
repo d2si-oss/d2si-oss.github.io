@@ -92,14 +92,15 @@ The three instances are configured with userdata: consul and docker are
 installed and started with the good options, an entry is added to /etc/hosts so
 consul resolves into the IP address of the consul server. When connecting to
 consul or docker servers, you should use the public IP addresses (given in
-terraform outputs).
+terraform outputs) and connect with user "admin" (the terraform setup uses
+a debian AMI).
 
 ### Creating an Overlay
 We can now create an overlay network between our two Docker nodes:
 
 ```console
 docker0:~$ docker network create --driver overlay --subnet 192.168.0.0/24 demonet
-620dd594834293e912bc17931d589c41bac318734d1084632f02da3177708bdc
+13fb802253b6f0a44e17e2b65505490e0c80527e1d78c4f5c74375aff4bf882a
 ```
 
 We are using the overlay driver, and are choosing 192.168.0.0/24 as a subnet for
@@ -110,24 +111,24 @@ Let's check that we configured our overlay correctly by listing networks on both
 hosts.
 
 ```console
+docker0:~$ docker network ls
 NETWORK ID          NAME                DRIVER              SCOPE
 eb096cb816c0        bridge              bridge              local
-620dd5948342        demonet             overlay             global
+13fb802253b6        demonet             overlay             global
 d538d58b17e7        host                host                local
 f2ee470bb968        none                null                local
 
 docker1:~$ docker network ls
-admin@docker1:~$ docker network ls
 docker network ls
 NETWORK ID          NAME                DRIVER              SCOPE
 eb7a05eba815        bridge              bridge              local
-620dd5948342        demonet             overlay             global
+13fb802253b6        demonet             overlay             global
 4346f6c422b2        host                host                local
 5e8ac997ecfa        none                null                local
 ```
 
 This looks good: both Docker nodes know the demonet network and it has the same
-id (*620dd5948342*) on both hosts.
+id (*13fb802253b6*) on both hosts.
 
 Let's now check that our overlay works by creating a container on docker0 and
 trying to ping it from docker1. On docker0, we create a C0 container, attach it
@@ -251,7 +252,7 @@ To list the network namespaces created by Docker we can simply run:
 ```console
 docker0:~$ sudo ls -1 /var/run/docker/netns
 e4b8ecb7ae7c
-1-620dd59483
+1-13fb802253
 ```
 
 To use this information, we need to identify the network namespace of
@@ -319,7 +320,7 @@ managed by docker, we can see that it has appeared in the list:
 docker0:~$ docker network ls
 NETWORK ID          NAME                DRIVER              SCOPE
 eb096cb816c0        bridge              bridge              local
-620dd5948342        demonet             overlay             global
+13fb802253b6        demonet             overlay             global
 f6823b311fd2        docker_gwbridge     bridge              local
 d538d58b17e7        host                host                local
 f2ee470bb968        none                null                local
@@ -380,23 +381,23 @@ in another one. If we look again at the network namespaces:
 ```console
 docker0:~$ sudo ls -1 /var/run/docker/netns
 e4b8ecb7ae7c
-1-620dd59483
+1-13fb802253
 ```
 
-We can see a namespace called "1-620dd59483". Except for the "1-", the name of
+We can see a namespace called "1-13fb802253". Except for the "1-", the name of
 this namespace is the beginning of the network id of our overlay network:
 
 {% raw %}
     docker0:~$ docker network inspect demonet -f {{.Id}}
-    620dd594834293e912bc17931d589c41bac318734d1084632f02da3177708bdc
+    13fb802253b6f0a44e17e2b65505490e0c80527e1d78c4f5c74375aff4bf882a
 {% endraw %}
 
 This namespace is clearly related to our overlay network. We can look at the
 interfaces present in that namespace:
 
 ```console
-$ overns=/var/run/docker/netns/1-620dd59483
-$ sudo nsenter --net=$overns ip -d link show
+docker0:~$ overns=/var/run/docker/netns/1-13fb802253
+docker0:~$ sudo nsenter --net=$overns ip -d link show
 2: br0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UP mode DEFAULT group default
     link/ether 3a:2d:44:c0:0e:aa brd ff:ff:ff:ff:ff:ff promiscuity 0
     bridge

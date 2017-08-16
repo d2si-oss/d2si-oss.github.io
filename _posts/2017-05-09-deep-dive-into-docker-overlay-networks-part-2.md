@@ -51,14 +51,11 @@ PING 192.168.0.100 (192.168.0.100): 56 data bytes
 docker0:~$ sudo tcpdump -pni eth0 "port 4789"
 tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
 listening on eth0, link-type EN10MB (Ethernet), capture size 262144 bytes
-sudo tcpdump -peni eth0 "port 4789"
-tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
-listening on eth0, link-type EN10MB (Ethernet), capture size 262144 bytes
-17:46:13.884307 06:4c:1f:a8:84:3b > 06:e2:c0:20:ec:9f, 10.0.0.11.14596 > 10.0.0.10.4789: VXLAN, flags [I] (0x08), vni 256
-02:42:c0:a8:00:02 > 02:42:c0:a8:00:64, 192.168.0.2 > 192.168.0.100: ICMP echo request, id 1, seq 0, length 64
+12:55:53.652322 IP 10.0.0.11.64667 > 10.0.0.10.4789: VXLAN, flags [I] (0x08), vni 256
+IP 192.168.0.2 > 192.168.0.100: ICMP echo request, id 1, seq 0, length 64
 
-17:46:13.884407 06:e2:c0:20:ec:9f > 06:4c:1f:a8:84:3b, 10.0.0.10.54415 > 10.0.0.11.4789: VXLAN, flags [I] (0x08), vni 256
-02:42:c0:a8:00:64 > 02:42:c0:a8:00:02, 192.168.0.100 > 192.168.0.2: ICMP echo reply, id 1, seq 0, length 64
+12:55:53.652409 IP 10.0.0.10.47697 > 10.0.0.11.4789: VXLAN, flags [I] (0x08), vni 256
+IP 192.168.0.100 > 192.168.0.2: ICMP echo reply, id 1, seq 0, length 64
 ```
 Each packet generates two lines of output in tcpdump because due to VXLAN frames
 analysis (a few fields have been removed for readability):
@@ -83,13 +80,13 @@ There is no ARP information inside the container. If we ping C0 the container
 will generate ARP traffic. Let's first see how this traffic is seen in the
 overlay namespace on docker0:
 ```console
-docker0:~$ sudo nsenter --net=$overns tcpdump -peni any "arp"
+docker0:~$ sudo nsenter --net=$overns tcpdump -pni any "arp"
 ```
 
 Going back to our container, we will try to ping C0, which will generate an ARP
 packet:
 ```console
-$ ping 192.168.0.100
+root@6234b23677b9:/# ping 192.168.0.100
 ```
 There is nothing in tcpdump on docker0 so the ARP traffic is not sent in the
 VXLAN tunnel (you may see ARP requests but no for host 192.168.0.100). Let's
@@ -105,8 +102,8 @@ to the network.
 ```console
 docker1:~$ sudo ls -1 /var/run/docker/netns
 102022d57fab
-xx-620dd5948
-docker1:~$ overns=xx-620dd5948
+x-13fb802253
+docker1:~$ overns=/var/run/docker/netns/x-13fb802253
 docker1:~$ sudo nsenter --net=$overns tcpdump -peni any "arp"
 ```
 When we ping from the window with the container, here is what we see in tcpdump:
@@ -176,7 +173,7 @@ We can first look at the content of Consul. What is stored in there?
 
 The network that was empty when we started now contains information and we can
 recognize the id of our overlay:
-620dd594834293e912bc17931d589c41bac318734d1084632f02da3177708bdc.
+13fb802253b6f0a44e17e2b65505490e0c80527e1d78c4f5c74375aff4bf882a.
 
 The Consul UI does not display keys when they are too long but we can use curl
 to look at the content (Docker stores the information as JSON which is based64
@@ -194,7 +191,7 @@ encoded and Consul answers queries in JSON):
         "com.docker.network.enable_ipv6": false,
         "com.docker.network.generic": {}
       },
-      "id": "620dd594834293e912bc17931d589c41bac318734d1084632f02da3177708bdc",
+      "id": "13fb802253b6f0a44e17e2b65505490e0c80527e1d78c4f5c74375aff4bf882a",
       "inDelete": false,
       "ingress": false,
       "internal": false,
@@ -213,7 +210,7 @@ encoded and Consul answers queries in JSON):
 
 We can find all the metadata on our network:
 - name: demonet
-- id: 620dd594834293e912bc17931d589c41bac318734d1084632f02da3177708bdc
+- id: 13fb802253b6f0a44e17e2b65505490e0c80527e1d78c4f5c74375aff4bf882a
 - subnet range: 192.168.0.0/24
 
 We can also retrieve information about endpoints but the curl queries are hard
