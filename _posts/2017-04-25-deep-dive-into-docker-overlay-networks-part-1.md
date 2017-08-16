@@ -92,14 +92,15 @@ The three instances are configured with userdata: consul and docker are
 installed and started with the good options, an entry is added to /etc/hosts so
 consul resolves into the IP address of the consul server. When connecting to
 consul or docker servers, you should use the public IP addresses (given in
-terraform outputs).
+terraform outputs) and connect with user "admin" (the terraform setup uses
+a debian AMI).
 
 ### Creating an Overlay
 We can now create an overlay network between our two Docker nodes:
 
 ```console
 docker0:~$ docker network create --driver overlay --subnet 192.168.0.0/24 demonet
-620dd594834293e912bc17931d589c41bac318734d1084632f02da3177708bdc
+13fb802253b6f0a44e17e2b65505490e0c80527e1d78c4f5c74375aff4bf882a
 ```
 
 We are using the overlay driver, and are choosing 192.168.0.0/24 as a subnet for
@@ -110,24 +111,24 @@ Let's check that we configured our overlay correctly by listing networks on both
 hosts.
 
 ```console
+docker0:~$ docker network ls
 NETWORK ID          NAME                DRIVER              SCOPE
 eb096cb816c0        bridge              bridge              local
-620dd5948342        demonet             overlay             global
+13fb802253b6        demonet             overlay             global
 d538d58b17e7        host                host                local
 f2ee470bb968        none                null                local
 
 docker1:~$ docker network ls
-admin@docker1:~$ docker network ls
 docker network ls
 NETWORK ID          NAME                DRIVER              SCOPE
 eb7a05eba815        bridge              bridge              local
-620dd5948342        demonet             overlay             global
+13fb802253b6        demonet             overlay             global
 4346f6c422b2        host                host                local
 5e8ac997ecfa        none                null                local
 ```
 
 This looks good: both Docker nodes know the demonet network and it has the same
-id (*620dd5948342*) on both hosts.
+id (*13fb802253b6*) on both hosts.
 
 Let's now check that our overlay works by creating a container on docker0 and
 trying to ping it from docker1. On docker0, we create a C0 container, attach it
@@ -241,45 +242,36 @@ We can identify the other end of a veth using the ethtool command. However this
 command is not available in our container. We can execute this command inside
 our container using "nsenter" which allows us to enter one or several namespaces
 associated with a process or using "ip netns exec" which relies on iproute to
-execute a command in a given network namespace. In our examples, we will use ip
-netns.
+execute a command in a given network namespace. Docker does not create symlinks
+in the /var/run/netns directory which is where ip netns is looking for network 
+namespaces. This is why we will rely on nsenter for namespaces created by
+Docker.
 
-The first thing we need to do is to identify the network namespace of the
-container. We can achieve this by inspecting the container, and extracting what
+To list the network namespaces created by Docker we can simply run:
+
+```console
+docker0:~$ sudo ls -1 /var/run/docker/netns
+e4b8ecb7ae7c
+1-13fb802253
+```
+
+To use this information, we need to identify the network namespace of
+containers. We can achieve this by inspecting them, and extracting what
 we need from the SandboxKey:
 
 {% raw %}
+```console
     docker0:~$ docker inspect C0 -f {{.NetworkSettings.SandboxKey}}
     /var/run/docker/netns/e4b8ecb7ae7c
 
-    docker0:~$ sandbox=$(docker inspect C0 -f {{.NetworkSettings.SandboxKey}})
-    docker0:~$ C0netns=${sandbox##*/}
-    docker0:~$ echo $C0netns
-    e4b8ecb7ae7c
+    docker0:~$ C0netns=$(docker inspect C0 -f {{.NetworkSettings.SandboxKey}})
 {% endraw %}
-
-Docker does not create symlinks in the /var/run/netns directory which is where
-ip netns is looking for network namespaces. To solve this, we simply need to add
-a symlink (if you use the terraform setup this symlink is already present).
-
-```console
-$ sudo ln -s /var/run/docker/netns /var/run/netns
-```
-
-We can now run ip netns commands. For instance if we want to list network
-namespaces:
-
-```console
-docker0:~$ sudo ip netns ls
-e4b8ecb7ae7c
-1-620dd59483
-```
 
 We can also execute host commands inside the network namespace of a container
 (even if this container does not have the command):
 
 ```console
-docker0:~$ sudo ip netns exec $C0netns ip addr show eth0
+docker0:~$ sudo nsenter --net=$C0netns ip addr show eth0
 6: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UP group default
     link/ether 02:42:c0:a8:00:64 brd ff:ff:ff:ff:ff:ff
     inet 192.168.0.100/24 scope global eth0
@@ -290,24 +282,13 @@ Let's see what are the interface indexes associated with the peers of eth0 and
 eth1:
 
 ```console
-docker0:~$ sudo ip netns exec $C0netns ethtool -S eth0
+docker0:~$ sudo nsenter --net=$C0netns ethtool -S eth0
 NIC statistics:
     peer_ifindex: 7
-docker0:~$ sudo ip netns exec $C0netns ethtool -S eth1
+docker0:~$ sudo nsenter --net=$C0netns ethtool -S eth1
 NIC statistics:
     peer_ifindex: 10
 ```
-
-Using nsenter, we could execute the same commands:
-
-{% raw %}
-    docker0:~$ sandbox=$(docker inspect C0 -f {{.NetworkSettings.SandboxKey}})
-    docker0:~$ sudo nsenter --net=$sandbox ip addr show eth0
-    6: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UP group default
-        link/ether 02:42:c0:a8:00:64 brd ff:ff:ff:ff:ff:ff
-        inet 192.168.0.100/24 scope global eth0
-           valid_lft forever preferred_lft forever
-{% endraw %}
 
 We are now looking for interfaces with indexes 7 and 10. We can first look on
 the host itself:
@@ -339,7 +320,7 @@ managed by docker, we can see that it has appeared in the list:
 docker0:~$ docker network ls
 NETWORK ID          NAME                DRIVER              SCOPE
 eb096cb816c0        bridge              bridge              local
-620dd5948342        demonet             overlay             global
+13fb802253b6        demonet             overlay             global
 f6823b311fd2        docker_gwbridge     bridge              local
 d538d58b17e7        host                host                local
 f2ee470bb968        none                null                local
@@ -398,29 +379,29 @@ The interface peered with eth0 is not in the host network namespace. It must be
 in another one. If we look again at the network namespaces:
 
 ```console
-docker0:~$ sudo ip netns ls
+docker0:~$ sudo ls -1 /var/run/docker/netns
 e4b8ecb7ae7c
-1-620dd59483
+1-13fb802253
 ```
 
-We can see a namespace called "1-c4305b67cd". Except for the "1-", the name of
+We can see a namespace called "1-13fb802253". Except for the "1-", the name of
 this namespace is the beginning of the network id of our overlay network:
 
 {% raw %}
     docker0:~$ docker network inspect demonet -f {{.Id}}
-    620dd594834293e912bc17931d589c41bac318734d1084632f02da3177708bdc
+    13fb802253b6f0a44e17e2b65505490e0c80527e1d78c4f5c74375aff4bf882a
 {% endraw %}
 
 This namespace is clearly related to our overlay network. We can look at the
 interfaces present in that namespace:
 
 ```console
-$ overns=1-620dd59483
-$ sudo ip netns exec $overns ip -d link show
+docker0:~$ overns=/var/run/docker/netns/1-13fb802253
+docker0:~$ sudo nsenter --net=$overns ip -d link show
 2: br0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue state UP mode DEFAULT group default
     link/ether 3a:2d:44:c0:0e:aa brd ff:ff:ff:ff:ff:ff promiscuity 0
     bridge
-5: vxlan1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue master br0 state UNKNOWN mode DEFAULT group default
+5: vxlan0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1450 qdisc noqueue master br0 state UNKNOWN mode DEFAULT group default
     link/ether 4a:23:72:a3:fc:e3 brd ff:ff:ff:ff:ff:ff promiscuity 1
     vxlan id 256 srcport 10240 65535 dstport 4789 proxy l2miss l3miss ageing 300
     bridge_slave
@@ -434,7 +415,7 @@ The overlay network namespace contains three interfaces (and lo):
 - br0: a bridge
 - veth2: a veth interface which is the peer interface of eth0 in our container
   and which is connected to the bridge
-- vxlan1: an interface of type "vxlan" which is also connected to the bridge
+- vxlan0: an interface of type "vxlan" which is also connected to the bridge
 
 The vxlan interface is clearly where the "overlay magic" is happening and we are
 going to look at it in details but let's update our diagram first:
