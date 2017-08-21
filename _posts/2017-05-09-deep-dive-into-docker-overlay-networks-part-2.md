@@ -7,7 +7,7 @@ keywords: docker overlay network,overlay network,vxlan,netlink,dockercon,linux n
 ---
 
 ## Introduction
-In [part1](/2017/04/25/deep-dive-into-docker-overlay-networks-part-1.html) of
+In [part 1](/2017/04/25/deep-dive-into-docker-overlay-networks-part-1.html) of
 this blog post we have seen how Docker creates a dedicated namespace for the
 overlay and connect the containers to this namespace. We have also seen that
 the overlay communication between Docker hosts uses VXLAN. In this second post,
@@ -345,5 +345,5 @@ very complete post:
 
 ## Conclusion
 In the first two parts of this post, we have seen how the Docker overlay works
-and the technologies it relies on. In the third and final part, we will see how
+and the technologies it relies on. In the third and final [part](/2017/08/20/deep-dive-into-docker-overlay-networks-part-3.html), we will see how
 we can build our own overlay from scratch using only Linux commands.
