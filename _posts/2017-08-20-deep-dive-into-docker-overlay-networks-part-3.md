@@ -7,10 +7,10 @@ keywords: docker overlay network,overlay network,vxlan,netlink,dockercon,linux n
 ---
 
 ## Introduction
-In [part1](/2017/04/25/deep-dive-into-docker-overlay-networks-part-1.html) of
+In [part 1](/2017/04/25/deep-dive-into-docker-overlay-networks-part-1.html) of
 this blog post we have seen how Docker creates a dedicated namespace for the
 overlay and connect the containers to this namespace. 
-In [part2](/2017/05/09/deep-dive-into-docker-overlay-networks-part-2.html) we
+In [part 2](/2017/05/09/deep-dive-into-docker-overlay-networks-part-2.html) we
 have looked in details at how Docker uses VXLAN to tunnel traffic between the
 hosts in the overlay. In this third post, we will see how we can create our
 own overlay with standard Linux commands.
@@ -45,7 +45,7 @@ docker0:~$ sudo ip netns exec overns ip link set vxlan1 up
 The most important command so far is the creation of the VXLAN interface. We
 configured it to use VXLAN id 42 and to tunnel traffic on the standard VXLAN
 port. The proxy option allows the vxlan interface to answer ARP queries (we have
-seen it in [part2](/2017/05/09/deep-dive-into-docker-overlay-networks-part-2.html)).
+seen it in [part 2](/2017/05/09/deep-dive-into-docker-overlay-networks-part-2.html)).
 We will discuss the learning option later in this post. Notice that we did not create the
 VXLAN interface inside the namespace but on the host and then moved it to the
 namespace. This is necessary so the VXLAN interface can keep a link with our 
