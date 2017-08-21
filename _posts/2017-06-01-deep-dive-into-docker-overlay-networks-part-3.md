@@ -45,7 +45,7 @@ docker0:~$ sudo ip netns exec overns ip link set vxlan1 up
 The most important command so far is the creation of the VXLAN interface. We
 configured it to use VXLAN id 42 and to tunnel traffic on the standard VXLAN
 port. The proxy option allows the vxlan interface to answer ARP queries (we have
-seen in it [part2](/2017/05/09/deep-dive-into-docker-overlay-networks-part-2.html)).
+seen it in [part2](/2017/05/09/deep-dive-into-docker-overlay-networks-part-2.html)).
 We will discuss the learning option later in this post. Notice that we did not create the
 VXLAN interface inside the namespace but on the host and then moved it to the
 namespace. This is necessary so the VXLAN interface can keep a link with our 
@@ -239,7 +239,7 @@ I described the messages received in userspace when the kernel is sending
 notifications for these events, but similar messages can be sent to the
 kernel to configure links or neighbors.
 
-iproute2 allows us to listen to netwlink events using the monitor subcommand.
+iproute2 allows us to listen to Netlink events using the monitor subcommand.
 If we want to monitor for link information for instance:
 ```console
 docker0:~$ ip monitor link
@@ -392,7 +392,7 @@ here is what we get:
 docker0:~$ sudo ip netns exec overns ip monitor neigh
 miss dev vxlan1 lladdr 02:42:c0:a8:00:03 STALE
 ```
-Now the we have the ARP information, we are getting an L2miss because we do
+Now that we have the ARP information, we are getting an L2miss because we do
 not know where the mac address is located in the overlay.
 Let's add this information:
 ```console
@@ -536,7 +536,7 @@ In the web interface, we get this for ARP keys:
 <img src="/assets/2017-06-01-deep-dive-into-docker-overlay-networks-part-3/consul_arp.png" alt="Consul ARP entries" width="600" style="margin: 0px auto;display:block;">
 
 Now we just need to lookup data when we receive a GETNEIGH event and populate
-the ARP or FIB tables using Consul data. Here is a (slighlty simplified) python
+the ARP or FIB tables using Consul data. Here is a (slightly simplified) python
 script which does this:
 ```python
 from pyroute2 import NetNS
