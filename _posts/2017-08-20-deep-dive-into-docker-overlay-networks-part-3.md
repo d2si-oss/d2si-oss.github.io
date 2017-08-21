@@ -55,7 +55,7 @@ able to send traffic outside the namespace.
 
 Once we have run these commands on both docker0 and docker1, here is what we
 have:
-<img src="/assets/2017-06-01-deep-dive-into-docker-overlay-networks-part-3/overlay-1.png" alt="VXLAN interface and bridge in an overlay namespace" width="600" style="margin: 0px auto;display:block;">
+<img src="/assets/2017-08-20-deep-dive-into-docker-overlay-networks-part-3/overlay-1.png" alt="VXLAN interface and bridge in an overlay namespace" width="600" style="margin: 0px auto;display:block;">
 
 Now we will create containers and connect them to our bridge. Let's
 start with docker0. First, we create a container:
@@ -113,7 +113,7 @@ The first parameter is the name of the container to attach and the second one
 the final digit of the MAC/IP addresses.
 
 Here is the setup we have gotten to:
-<img src="/assets/2017-06-01-deep-dive-into-docker-overlay-networks-part-3/overlay-2.png" alt="Connecting containers to our overlay" width="600" style="margin: 0px auto;display:block;">
+<img src="/assets/2017-08-20-deep-dive-into-docker-overlay-networks-part-3/overlay-2.png" alt="Connecting containers to our overlay" width="600" style="margin: 0px auto;display:block;">
 
 Now that our containers are configured, we can test connectivity:
 ```console
@@ -194,7 +194,7 @@ PING 192.168.0.3 (192.168.0.3): 56 data bytes
 ```
 
 We have successfuly built an overlay with standard Linux commands:
-<img src="/assets/2017-06-01-deep-dive-into-docker-overlay-networks-part-3/overlay-3.png" alt="Overview of our manual overlay" width="600" style="margin: 0px auto;display:block;">
+<img src="/assets/2017-08-20-deep-dive-into-docker-overlay-networks-part-3/overlay-3.png" alt="Overview of our manual overlay" width="600" style="margin: 0px auto;display:block;">
 
 ## Dynamic container discovery
 We have just created an overlay from scratch. However, we need to manually
@@ -462,7 +462,7 @@ if msg_type != RTM_GETNEIGH:
 ```
 To understand how the message is decoded, here is a representation of the message.
 The Netlink header is represented in orange:
-<img src="/assets/2017-06-01-deep-dive-into-docker-overlay-networks-part-3/getneigh_message.png" alt="GETNEIGH Netlink message structure" width="400" style="margin: 0px auto;display:block;">
+<img src="/assets/2017-08-20-deep-dive-into-docker-overlay-networks-part-3/getneigh_message.png" alt="GETNEIGH Netlink message structure" width="400" style="margin: 0px auto;display:block;">
 Once we have a GETNEIGH message we can decode the ndmsg header (in blue):
 ```python
 ndm_family, _, _, ndm_ifindex, ndm_state, ndm_flags, ndm_type = struct.unpack("=BBHiHBB", data[:12])
@@ -533,7 +533,7 @@ We create two types of entries:
 - FIB: using the keys demo/arp/{MAC address} with the IP address of the server in the overlay hosting this Mac address
 
 In the web interface, we get this for ARP keys:
-<img src="/assets/2017-06-01-deep-dive-into-docker-overlay-networks-part-3/consul_arp.png" alt="Consul ARP entries" width="600" style="margin: 0px auto;display:block;">
+<img src="/assets/2017-08-20-deep-dive-into-docker-overlay-networks-part-3/consul_arp.png" alt="Consul ARP entries" width="600" style="margin: 0px auto;display:block;">
 
 Now we just need to lookup data when we receive a GETNEIGH event and populate
 the ARP or FIB tables using Consul data. Here is a (slightly simplified) python
@@ -699,7 +699,7 @@ forwarding data is learned by the overlay namespace when the ICMP request
 packet gets to the overlay.
 
 Here is an overview of what we built:
-<img src="/assets/2017-06-01-deep-dive-into-docker-overlay-networks-part-3/overlay_consul.png" alt="Dynamic overlay with Consul" width="600" style="margin: 0px auto;display:block;">
+<img src="/assets/2017-08-20-deep-dive-into-docker-overlay-networks-part-3/overlay_consul.png" alt="Dynamic overlay with Consul" width="600" style="margin: 0px auto;display:block;">
 
 ## Conclusion
 This concludes our three part blog post on the Docker overlay. Do not hesitate
