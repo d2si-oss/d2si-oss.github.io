@@ -260,7 +260,6 @@ containers. We can achieve this by inspecting them, and extracting what
 we need from the SandboxKey:
 
 {% raw %}
-```console
 docker0:~$ docker inspect C0 -f {{.NetworkSettings.SandboxKey}} /var/run/docker/netns/e4b8ecb7ae7c
 docker0:~$ C0netns=$(docker inspect C0 -f {{.NetworkSettings.SandboxKey}})
 {% endraw %}
@@ -386,8 +385,8 @@ We can see a namespace called "1-13fb802253". Except for the "1-", the name of
 this namespace is the beginning of the network id of our overlay network:
 
 {% raw %}
-    docker0:~$ docker network inspect demonet -f {{.Id}}
-    13fb802253b6f0a44e17e2b65505490e0c80527e1d78c4f5c74375aff4bf882a
+docker0:~$ docker network inspect demonet -f {{.Id}}
+13fb802253b6f0a44e17e2b65505490e0c80527e1d78c4f5c74375aff4bf882a
 {% endraw %}
 
 This namespace is clearly related to our overlay network. We can look at the
