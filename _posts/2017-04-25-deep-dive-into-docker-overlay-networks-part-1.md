@@ -261,10 +261,8 @@ we need from the SandboxKey:
 
 {% raw %}
 ```console
-    docker0:~$ docker inspect C0 -f {{.NetworkSettings.SandboxKey}}
-    /var/run/docker/netns/e4b8ecb7ae7c
-
-    docker0:~$ C0netns=$(docker inspect C0 -f {{.NetworkSettings.SandboxKey}})
+docker0:~$ docker inspect C0 -f {{.NetworkSettings.SandboxKey}} /var/run/docker/netns/e4b8ecb7ae7c
+docker0:~$ C0netns=$(docker inspect C0 -f {{.NetworkSettings.SandboxKey}})
 {% endraw %}
 
 We can also execute host commands inside the network namespace of a container
