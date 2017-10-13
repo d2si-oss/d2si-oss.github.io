@@ -3,3 +3,5 @@ theme: jekyll-theme-cayman
 title: techblog.d2-si.eu
 description: The D2SI Technical Blog
 google_analytics: UA-92347745-1
+plugins:
+- jekyll-feed
